@@ -395,7 +395,7 @@ function AnalystOverview() {
               <div className="bg-secondary h-full" style={{ width: "24%" }} title="Medium Risk: 24%"></div>
               <div className="bg-primary h-full" style={{ width: "68%" }} title="Low / Cleared: 68%"></div>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
               <div className="p-space-sm bg-surface-container-low rounded-lg">
                 <div className="flex items-center gap-1 text-error font-label-caps text-[11px] font-bold uppercase">
                   <span className="w-2 h-2 rounded-full bg-error"></span>

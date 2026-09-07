@@ -108,7 +108,7 @@ function RuleCard({ rule, preset, onSave }) {
               <label className="font-label-sm text-label-sm font-semibold text-on-surface">Sensitivity Setting</label>
               <span className={`font-label-caps text-label-caps uppercase font-bold ${preset.controlLabelClass}`}>{CONTROL_LABEL(sensitivity)}</span>
             </div>
-            <div className="grid grid-cols-3 gap-space-xs p-1 bg-surface-container rounded">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-xs p-1 bg-surface-container rounded">
               {SENSITIVITY.map((s) => (
                 <button
                   key={s}

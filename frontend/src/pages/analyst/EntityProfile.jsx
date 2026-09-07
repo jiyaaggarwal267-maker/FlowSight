@@ -63,7 +63,7 @@ function EntityProfile() {
     return (
       <div className="flex flex-col w-full pb-space-2xl">
         <div className="h-8 bg-surface-container-high rounded w-64 animate-pulse mb-space-md" />
-        <div className="grid grid-cols-4 gap-space-md mb-space-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md mb-space-lg">
           {[1,2,3,4].map(i => <div key={i} className="h-36 bg-surface-container-high rounded animate-pulse" />)}
         </div>
         <div className="h-64 bg-surface-container-high rounded animate-pulse" />
