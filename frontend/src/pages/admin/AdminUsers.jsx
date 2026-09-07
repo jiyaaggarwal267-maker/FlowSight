@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react"
+import { Fragment, useRef, useState, useEffect } from "react"
 import { api } from "../../lib/api.js"
 
 const ROLE_DEFS = [
@@ -40,6 +40,9 @@ function AdminUsers() {
   const [role, setRole] = useState(ROLE_OPTIONS[1])
   const [entity, setEntity] = useState(ENTITY_OPTIONS[0])
   const [submitting, setSubmitting] = useState(false)
+  const [editTarget, setEditTarget] = useState(null)
+  const [editRole, setEditRole] = useState("")
+  const [editBusy, setEditBusy] = useState(false)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
 
@@ -143,6 +146,43 @@ function AdminUsers() {
       showToast(`Invite failed: ${err.message}`)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const openEdit = (u) => {
+    setEditRole(u.role_key || "analyst")
+    setEditTarget(u)
+  }
+
+  const saveEdit = async () => {
+    if (!editTarget) return
+    setEditBusy(true)
+    const roleLabel =
+      editRole === "senior-analyst" ? "Senior Analyst" :
+      editRole === "compliance" ? "Compliance Director" :
+      editRole === "admin" ? "Admin" : "L1 Analyst"
+    try {
+      const updated = await api.updateUser(editTarget.id, { role_key: editRole, role: roleLabel })
+      setUsers((prev) => prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)))
+      setEditTarget(null)
+      showToast(`${updated.name} role updated to ${editRole}`)
+    } catch (err) {
+      showToast(`Role update failed: ${err.message}`)
+    } finally {
+      setEditBusy(false)
+    }
+  }
+
+  const deactivateUser = async (u) => {
+    setEditBusy(true)
+    try {
+      const updated = await api.updateUser(u.id, { status: "inactive" })
+      setUsers((prev) => prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)))
+      showToast(`${u.name} deactivated`)
+    } catch (err) {
+      showToast(`Deactivation failed: ${err.message}`)
+    } finally {
+      setEditBusy(false)
     }
   }
 
@@ -257,7 +297,8 @@ function AdminUsers() {
             </thead>
             <tbody className="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
               {filtered.map((u) => (
-                <tr key={u.email} className="hover:bg-surface-container-low/60 transition-colors group h-table-row-h">
+                <Fragment key={`row-${u.id}`}>
+                <tr key={`${u.id}-tr`} className="hover:bg-surface-container-low/60 transition-colors group h-table-row-h">
                   <td className="pl-space-base pr-space-sm py-space-xs">
                     <div className="flex items-center gap-space-sm">
                       <div className={`w-8 h-8 rounded-full ${u.avatar} flex items-center justify-center font-label-sm text-label-sm font-semibold shadow-sm ring-1 ring-surface-container-high`}>{u.initials}</div>
@@ -294,11 +335,11 @@ function AdminUsers() {
                       <button onClick={() => showToast(`Activity log open · ${u.name}`)} title="View Activity Log" className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors">
                         <span className="material-symbols-outlined text-[18px]">history</span>
                       </button>
-                      <button onClick={() => showToast(`Edit role & scopes · ${u.name}`)} title="Edit Role & Scopes" className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors">
+                      <button onClick={() => openEdit(u)} title="Edit Role & Scopes" className="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors">
                         <span className="material-symbols-outlined text-[18px]">edit_square</span>
                       </button>
                       {u.canDeactivate ? (
-                        <button onClick={() => showToast(`Deactivation flagged for review · ${u.name}`)} title="Deactivate User" className="p-1 rounded hover:bg-error-container text-error transition-colors">
+                        <button onClick={() => deactivateUser(u)} disabled={editBusy} title="Deactivate User" className="p-1 rounded hover:bg-error-container text-error transition-colors disabled:opacity-50">
                           <span className="material-symbols-outlined text-[18px]">person_off</span>
                         </button>
                       ) : (
@@ -309,6 +350,32 @@ function AdminUsers() {
                     </div>
                   </td>
                 </tr>
+                {editTarget && editTarget.id === u.id && (
+                  <tr key={`edit-${u.id}`} className="bg-surface-container-low">
+                    <td colSpan="7" className="px-space-base py-space-sm">
+                      <div className="flex items-center gap-space-sm flex-wrap">
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Edit role for <strong className="text-on-surface">{u.name}</strong>:</span>
+                        <select
+                          value={editRole}
+                          onChange={(e) => setEditRole(e.target.value)}
+                          className="px-space-sm py-space-2xs rounded-lg bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm"
+                        >
+                          <option value="analyst">L1 Analyst</option>
+                          <option value="senior-analyst">Senior Analyst</option>
+                          <option value="compliance">Compliance</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        <button onClick={saveEdit} disabled={editBusy} className="px-space-sm py-space-2xs rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary-container transition-colors disabled:opacity-60 cursor-pointer">
+                          {editBusy ? "Saving…" : "Save"}
+                        </button>
+                        <button onClick={() => setEditTarget(null)} disabled={editBusy} className="px-space-sm py-space-2xs rounded-lg bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container transition-colors cursor-pointer">
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
               ))}
             {loading && (
                 <tr><td colSpan="7" className="px-space-base py-space-lg text-center font-body-sm text-body-sm text-on-surface-variant">Loading credentialed platform users…</td></tr>
@@ -328,10 +395,8 @@ function AdminUsers() {
             <button className="p-1 rounded bg-surface-container-low text-outline-variant cursor-not-allowed" disabled="">
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
-            <button onClick={() => showToast(`Page 1 of ${Math.max(1, users.length)} roster`)} className="w-7 h-7 rounded bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center font-semibold">1</button>
-            <button onClick={() => showToast("Page 2 of 8 roster")} className="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center transition-colors">2</button>
-            <button onClick={() => showToast("Page 3 of 8 roster")} className="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center transition-colors">3</button>
-            <button onClick={() => showToast("Page 4 of 8 roster")} className="p-1 rounded hover:bg-surface-container text-on-surface-variant transition-colors">
+            <button className="w-7 h-7 rounded bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center font-semibold">1</button>
+            <button className="p-1 rounded bg-surface-container-low text-outline-variant cursor-not-allowed" disabled="">
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
