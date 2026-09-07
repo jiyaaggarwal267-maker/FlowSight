@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import json
 import sys
-import threading
 from collections import Counter, defaultdict
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -42,7 +42,42 @@ from .seed import audit, refresh_detection, seed_if_needed
 
 DATA_DIR = BACKEND_ROOT / "data"
 
-app = FastAPI(title="FLOWSIGHT API", version="2.0.0", description=__doc__)
+
+def _init_database() -> None:
+    """Create tables and seed data before the app starts serving requests.
+
+    Render's free tier keeps an ephemeral disk, so the instance and its
+    SQLite DB can be wiped at any time. Running this synchronously at boot
+    (instead of in a background thread) guarantees a recycled or restarted
+    service never serves requests against an empty/partial database: the
+    app only starts accepting traffic once seeding has completed.
+    """
+    from sqlalchemy import inspect
+    from .database import Base, SessionLocal, engine
+
+    with engine.begin() as conn:
+        Base.metadata.create_all(bind=conn)
+        insp = inspect(conn)
+        _add_column_if_missing(conn, insp, "accounts",
+                               ("frozen", "BOOLEAN", "0"),
+                               ("freeze_reason", "VARCHAR(256)", "''"))
+        _add_column_if_missing(conn, insp, "investigations",
+                               ("findings_json", "JSON", "'[]'"))
+
+    db = SessionLocal()
+    try:
+        seed_if_needed(db)
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _init_database()
+    yield
+
+
+app = FastAPI(title="FLOWSIGHT API", version="2.0.0", description=__doc__, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,35 +85,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_started = threading.Event()
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    def _init() -> None:
-        from sqlalchemy import inspect, text
-        from .database import Base, engine
-
-        with engine.begin() as conn:
-            Base.metadata.create_all(bind=conn)
-            insp = inspect(conn)
-            _add_column_if_missing(conn, insp, "accounts",
-                                   ("frozen", "BOOLEAN", "0"),
-                                   ("freeze_reason", "VARCHAR(256)", "''"))
-            _add_column_if_missing(conn, insp, "investigations",
-                                   ("findings_json", "JSON", "'[]'"))
-        from .database import SessionLocal
-
-        db = SessionLocal()
-        try:
-            if not _started.is_set():
-                seed_if_needed(db)
-                _started.set()
-        finally:
-            db.close()
-
-    threading.Thread(target=_init, daemon=True).start()
 
 
 def _add_column_if_missing(conn, insp, table: str, *columns) -> None:

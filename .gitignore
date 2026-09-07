@@ -4,3 +4,5 @@ node_modules/
 dist/
 .env
 flowsight.db
+flowsight.db-shm
+flowsight.db-wal

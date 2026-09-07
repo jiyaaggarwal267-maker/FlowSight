@@ -1,0 +1,22 @@
+name: Keep Render service awake
+
+on:
+  schedule:
+    # Every 10 minutes keeps the Render free service under its ~15 min idle
+    # spin-down so it never falls asleep.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "Set a repository variable 'APP_URL' (e.g. https://flowsight.onrender.com) to enable keep-alive pings." >&2
+            exit 0
+          fi
+          curl -fsS -o /dev/null --max-time 60 -w "pong: HTTP %{http_code} in %{time_total}s\n" "$APP_URL/api/health"
