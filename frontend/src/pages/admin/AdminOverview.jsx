@@ -51,6 +51,50 @@ function AdminOverview() {
     toastTimer.current = setTimeout(() => setToast(null), 3200)
   }
 
+  const downloadFile = (content, name, mime) => {
+    const blob = new Blob([content], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportSystemReport = () => {
+    const lines = [
+      "FLOWSIGHT System Report",
+      `Generated: ${new Date().toISOString()}`,
+      `Range: ${range}`,
+      "",
+      "Environment / Health",
+      JSON.stringify(adminHealth || health || {}, null, 2),
+      "",
+      "Registered Analysts",
+      ...users.map((u) => `${u.id || ""}\t${u.name || ""}\t${u.role || u.role_key || ""}\t${u.status || ""}`),
+      "",
+      "Recent Audit Logs",
+      ...logs.map((l) => `${l.timestamp || ""}\t${l.user || ""}\t${l.action || ""}\t${l.resource || ""}\t${l.result || ""}`),
+    ]
+    downloadFile(lines.join("\n"), `flowsight-system-report-${Date.now()}.txt`, "text/plain")
+    showToast("System report exported")
+  }
+
+  const fullDiagnostics = () => {
+    const services = adminHealth?.services ? Object.entries(adminHealth.services) : []
+    const payload = {
+      generated: new Date().toISOString(),
+      status: adminHealth?.status,
+      services: services.map(([k, v]) => ({ service: k, latency: v })),
+      counts: adminHealth?.counts || {},
+      active_analysts: users.length,
+      audit_log_entries: logs.length,
+      detail: health || {},
+    }
+    downloadFile(JSON.stringify(payload, null, 2), `flowsight-diagnostics-${Date.now()}.json`, "application/json")
+    showToast("Full diagnostics exported")
+  }
+
   return (
     <div className="flex flex-col w-full pb-space-2xl">
       {/* Page Header & Action Bar */}
@@ -77,7 +121,7 @@ function AdminOverview() {
             <span className="material-symbols-outlined absolute right-space-xs text-outline text-[18px] pointer-events-none">expand_more</span>
           </div>
           <button
-            onClick={() => showToast("System report export queued · SYS-RPT-2026-0911")}
+            onClick={exportSystemReport}
             className="flex items-center gap-space-xs h-9 px-space-base rounded bg-primary text-on-primary font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shadow-sm active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-[16px]">file_download</span>
@@ -367,7 +411,7 @@ function AdminOverview() {
                 <span className="material-symbols-outlined text-[16px] text-outline">history</span>
                 <span>Last automated diagnostics 48s ago</span>
               </div>
-              <button onClick={() => showToast("Full diagnostics report generated")} className="font-label-sm text-label-sm text-primary font-semibold hover:underline">Full Diagnostics</button>
+              <button onClick={fullDiagnostics} className="font-label-sm text-label-sm text-primary font-semibold hover:underline">Full Diagnostics</button>
             </div>
           </div>
           {/* Licensing & Node Capacity Panel */}

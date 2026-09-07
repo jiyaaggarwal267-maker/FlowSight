@@ -28,6 +28,9 @@ function AdminAuditLogs() {
   const [actionFilter, setActionFilter] = useState("All Actions")
   const [selLog, setSelLog] = useState(null)
   const [toast, setToast] = useState(null)
+  const [page, setPage] = useState(1)
+  const [dateRange, setDateRange] = useState("all")
+  const pageSize = 10
   const toastTimer = useRef(null)
 
   const showToast = (message) => {
@@ -93,11 +96,15 @@ function AdminAuditLogs() {
   }
 
   const ROWS = logs.map(mapLog)
+  const DAYS_MS = 86400000
+  const now = Date.now()
+  const archivedCutoff = now - 180 * DAYS_MS
+  const archivedRows = logs.filter((l) => l.timestamp && new Date(l.timestamp).getTime() < archivedCutoff)
   const LOG_TABS = [
     { key: "all", icon: "list_alt", label: "All Logs", count: logs.length || "0" },
     { key: "pending", icon: "pending_actions", label: "Pending Review", count: ROWS.filter((l) => l.result === "pending" || l.result === "Pending Approval").length },
     { key: "flagged", icon: "warning", label: "Flagged Anomalies", count: ROWS.filter((l) => l.result === "failure" || l.result === "Failed").length },
-    { key: "archived", icon: "archive", label: "Archived", count: 0 },
+    { key: "archived", icon: "archive", label: "Archived", count: archivedRows.length },
   ]
   const USERS_FILTER = ["All Users", ...Array.from(new Set(ROWS.map((l) => l.userName))).sort()]
   const ACTIONS_FILTER = ["All Actions", ...Array.from(new Set(ROWS.map((l) => ACTION_LABELS[l.actionKey] || l.action)))]
@@ -112,16 +119,21 @@ function AdminAuditLogs() {
     ...Object.fromEntries(ACTIONS_FILTER.slice(1).map((a) => [a, (l) => (ACTION_LABELS[l.actionKey] || l.action) === a])),
   }
 
-  const totalPages = Math.max(1, Math.ceil(ROWS.length / 10))
+  const rangeMin = dateRange === "all" ? 0 : dateRange === "7" ? now - 7 * DAYS_MS : dateRange === "30" ? now - 30 * DAYS_MS : now - 90 * DAYS_MS
 
   const rows = ROWS.filter((l) =>
     (ACTOR_FILTERS[userFilter](l) &&
       ACTION_FILTERS[actionFilter](l) &&
       (activeTab !== "pending" || l.result === "pending" || l.result === "Pending Approval") &&
       (activeTab !== "flagged" || l.result === "failure" || l.result === "Failed") &&
-      activeTab !== "archived") &&
+      (activeTab !== "archived" || (l.timestamp && new Date(l.timestamp).getTime() < archivedCutoff))) &&
+    (dateRange === "all" || (l.timestamp && new Date(l.timestamp).getTime() >= rangeMin)) &&
     (query === "" || `${l.userName} ${l.action} ${l.resource} ${l.cat}`.toLowerCase().includes(query.toLowerCase()))
   )
+
+  const totalFilteredPages = Math.max(1, Math.ceil(rows.length / pageSize))
+  const safePage = Math.min(page, totalFilteredPages)
+  const pageRows = rows.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const exportCsv = () => {
     const header = ["ID", "Timestamp", "User", "Action", "Resource", "Result"]
@@ -250,7 +262,7 @@ function AdminAuditLogs() {
               {LOG_TABS.map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => setActiveTab(t.key)}
+                  onClick={() => { setActiveTab(t.key); setPage(1) }}
                   className={[
                     "px-space-sm py-1 rounded font-medium flex items-center gap-1.5 active:scale-95 transition-all text-[12px]",
                     activeTab === t.key ? "bg-primary text-on-primary shadow-sm" : "hover:bg-surface-container text-on-surface-variant hover:text-on-surface",
@@ -274,7 +286,7 @@ function AdminAuditLogs() {
                 <span className="material-symbols-outlined absolute left-space-sm top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
                 <input
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => { setQuery(e.target.value); setPage(1) }}
                   className="w-full h-9 pl-9 pr-8 rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-all placeholder-outline"
                   placeholder="Search audit entries, resource IDs, hashes..."
                   type="text"
@@ -283,24 +295,29 @@ function AdminAuditLogs() {
               </div>
               {/* User Filter Dropdown */}
               <div className="relative min-w-[140px]">
-                <select value={userFilter} onChange={(e) => setUserFilter(e.target.value)} className="appearance-none w-full h-9 pl-space-sm pr-8 rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none cursor-pointer shadow-sm">
+                <select value={userFilter} onChange={(e) => { setUserFilter(e.target.value); setPage(1) }} className="appearance-none w-full h-9 pl-space-sm pr-8 rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none cursor-pointer shadow-sm">
                   {USERS_FILTER.map((u) => <option key={u}>{u}</option>)}
                 </select>
                 <span className="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">expand_more</span>
               </div>
               {/* Action Filter Dropdown */}
               <div className="relative min-w-[170px]">
-                <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="appearance-none w-full h-9 pl-space-sm pr-8 rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none cursor-pointer shadow-sm">
+                <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1) }} className="appearance-none w-full h-9 pl-space-sm pr-8 rounded bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none cursor-pointer shadow-sm">
                   {ACTIONS_FILTER.map((a) => <option key={a}>{a}</option>)}
                 </select>
                 <span className="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">expand_more</span>
               </div>
               {/* Date Range Picker */}
-              <button onClick={() => showToast("Date window set · Last 7 Days (Oct 24 - Oct 31, 2024)")} className="h-9 px-space-md rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-body-md text-body-md flex items-center gap-space-xs transition-colors shadow-sm whitespace-nowrap active:scale-95">
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">calendar_today</span>
-                <span>Last 7 Days (Oct 24 - Oct 31, 2024)</span>
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
-              </button>
+              <label className="relative">
+                <span className="material-symbols-outlined pointer-events-none absolute top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]" style={{ left: 12 }}>calendar_today</span>
+                <select value={dateRange} onChange={(e) => { setDateRange(e.target.value); setPage(1) }} className="appearance-none h-9 pl-8 pr-8 rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-body-md text-body-md cursor-pointer shadow-sm">
+                  <option value="all">All Time</option>
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                </select>
+                <span className="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">arrow_drop_down</span>
+              </label>
             </div>
             {/* Right Action Tools */}
             <div className="flex items-center gap-space-xs self-end lg:self-auto">
@@ -333,7 +350,7 @@ function AdminAuditLogs() {
                 {!loading && rows.length === 0 && (
                   <tr><td colSpan="7" className="px-space-md py-space-lg text-center font-body-sm text-body-sm text-on-surface-variant">No audit entries match the current filters.</td></tr>
                 )}
-                {rows.map((l) => (
+                {pageRows.map((l) => (
                   <tr key={l.date} className="h-10 hover:bg-surface-container-low/60 transition-colors group">
                     <td className="px-space-md font-numeric-md text-numeric-md text-on-surface-variant whitespace-nowrap">{l.date}</td>
                     <td className="px-space-md whitespace-nowrap">
@@ -380,17 +397,16 @@ function AdminAuditLogs() {
               </div>
             </div>
             <div className="flex items-center gap-space-xs">
-              <button className="h-8 px-space-sm rounded bg-surface-container text-on-surface-variant opacity-50 cursor-not-allowed font-body-sm text-body-sm flex items-center" disabled="">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1} className="h-8 px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm flex items-center cursor-pointer active:scale-95 disabled:opacity-50">
                 <span className="material-symbols-outlined text-[16px]">chevron_left</span>
                 <span>Previous</span>
               </button>
               <div className="flex items-center gap-1">
-                <span className="h-8 w-8 rounded bg-primary text-on-primary font-body-sm text-body-sm font-semibold flex items-center justify-center">1</span>
-                {totalPages < 2 ? null : [2, 3].filter((p) => p <= totalPages).map((p) => (
-                  <span key={p} onClick={() => showToast(`Page ${p} of ${totalPages} audit pages`)} className="h-8 w-8 rounded hover:bg-surface-container text-on-surface font-body-sm text-body-sm flex items-center justify-center cursor-pointer">{p}</span>
+                {Array.from({ length: totalFilteredPages }, (_, i) => i + 1).slice(0, 8).map((p) => (
+                  <button key={p} type="button" onClick={() => setPage(p)} className={`h-8 w-8 rounded font-body-sm text-body-sm font-semibold flex items-center justify-center cursor-pointer ${p === safePage ? "bg-primary text-on-primary" : "hover:bg-surface-container text-on-surface"}`}>{p}</button>
                 ))}
               </div>
-              <button onClick={() => showToast(`Page 1 of ${totalPages} audit pages`)} disabled={totalPages < 2} className="h-8 px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm flex items-center active:scale-95 disabled:opacity-50">
+              <button onClick={() => setPage((p) => Math.min(totalFilteredPages, p + 1))} disabled={safePage >= totalFilteredPages} className="h-8 px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm flex items-center cursor-pointer active:scale-95 disabled:opacity-50">
                 <span>Next</span>
                 <span className="material-symbols-outlined text-[16px]">chevron_right</span>
               </button>
