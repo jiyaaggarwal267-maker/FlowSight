@@ -87,21 +87,21 @@ function NetworkGraphHero({ tall = false }) {
           <path d="M 700 220 Q 770 290 840 310" fill="none" markerEnd="url(#arrow-red-main-hero)" stroke="#ef4444" strokeDasharray="3,3" strokeWidth="2"></path>
         </svg>
 
-        <div className="absolute left-[80px] top-[95px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
+        <div className="hidden md:block absolute left-[80px] top-[95px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span className="font-mono text-xs text-white font-semibold">SRC-301</span>
           </div>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹4,20,000 · UPI</p>
         </div>
-        <div className="absolute left-[80px] top-[235px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
+        <div className="hidden md:block absolute left-[80px] top-[235px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span className="font-mono text-xs text-white font-semibold">SRC-884</span>
           </div>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹8,10,450 · IMPS</p>
         </div>
-        <div className="absolute left-[285px] top-[165px] z-20 cursor-pointer" onClick={() => setLoopFocus((v) => !v)}>
+        <div className="hidden md:block absolute left-[285px] top-[165px] z-20 cursor-pointer" onClick={() => setLoopFocus((v) => !v)}>
           <div className={`absolute -inset-2.5 rounded-xl bg-red-600/30 ${loopFocus ? "" : "animate-pulse"}`}></div>
           <div className="relative px-3.5 py-2.5 bg-red-950 border-2 border-red-500 rounded-xl shadow-2xl text-left ring-2 ring-red-400/40">
             <div className="flex items-center justify-between gap-2">
@@ -113,7 +113,7 @@ function NetworkGraphHero({ tall = false }) {
           </div>
         </div>
 
-        <div className="absolute left-[340px] top-[24px] z-30 w-72 bg-slate-950/95 border border-red-500/80 rounded-xl shadow-2xl p-3.5 backdrop-blur-md text-white transition-all">
+        <div className="hidden md:block absolute left-[340px] top-[24px] z-30 w-72 bg-slate-950/95 border border-red-500/80 rounded-xl shadow-2xl p-3.5 backdrop-blur-md text-white transition-all">
           <div className="flex items-start justify-between pb-2 border-b border-slate-800">
             <div>
               <div className="flex items-center gap-1.5">
@@ -151,28 +151,28 @@ function NetworkGraphHero({ tall = false }) {
           </div>
         </div>
 
-        <div className="absolute left-[490px] top-[275px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow">
+        <div className="hidden md:block absolute left-[490px] top-[275px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             <span className="font-mono text-xs text-white font-semibold">AC-1099 (Kotak)</span>
           </div>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹3,50,000 · Fan-Out</p>
         </div>
-        <div className="absolute left-[670px] top-[195px] p-2 bg-red-950/80 border border-red-500 rounded-lg shadow-lg">
+        <div className="hidden md:block absolute left-[670px] top-[195px] p-2 bg-red-950/80 border border-red-500 rounded-lg shadow-lg">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500"></span>
             <span className="font-mono text-xs text-red-200 font-bold">SYNTHETIC CORP</span>
           </div>
           <p className="text-[10px] text-red-300 font-mono mt-0.5">Circular Loop Sink</p>
         </div>
-        <div className="absolute right-[30px] top-[115px] p-2 bg-slate-900 border border-slate-700 rounded-lg shadow">
+        <div className="hidden md:block absolute right-[30px] top-[115px] p-2 bg-slate-900 border border-slate-700 rounded-lg shadow">
           <div className="flex items-center gap-1.5">
             <MaterialIcon name="currency_exchange" className="text-xs text-slate-400" />
             <span className="font-mono text-xs text-slate-200 font-semibold">CRYPTO ON-RAMP</span>
           </div>
           <p className="text-[10px] text-slate-500 font-mono mt-0.5">USDT Gateway Liquidity</p>
         </div>
-        <div className="absolute right-[30px] top-[290px] p-2 bg-red-950/90 border border-red-700 rounded-lg shadow">
+        <div className="hidden md:block absolute right-[30px] top-[290px] p-2 bg-red-950/90 border border-red-700 rounded-lg shadow">
           <div className="flex items-center gap-1.5">
             <MaterialIcon name="apartment" className="text-xs text-red-400" />
             <span className="font-mono text-xs text-red-200 font-bold">OFFSHORE SINK</span>

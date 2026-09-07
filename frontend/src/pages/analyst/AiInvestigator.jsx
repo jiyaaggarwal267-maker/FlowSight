@@ -123,20 +123,20 @@ function AiInvestigator() {
               <div className="absolute left-space-md flex items-center gap-space-xs text-primary pointer-events-none">
                 <MaterialIcon name="troubleshoot" className="text-[24px]" />
               </div>
-              <input ref={inputRef} className="w-full h-14 pl-14 pr-32 rounded-lg bg-surface-container-low text-on-surface font-body-lg text-body-lg placeholder-outline focus:outline-none focus:bg-surface-container-lowest focus:shadow-sm transition-all" placeholder="Ask about this network or forensic anomalies... (e.g. explain fund paths, detect smurfing)" type="text" value={query} onChange={(e) => setQuery(e.target.value)} disabled={loading} />
+              <input ref={inputRef} className="w-full h-14 pl-12 pr-28 sm:pl-14 sm:pr-36 rounded-lg bg-surface-container-low text-on-surface font-body-md sm:font-body-lg text-body-md sm:text-body-lg placeholder-outline focus:outline-none focus:bg-surface-container-lowest focus:shadow-sm transition-all" placeholder="Ask about this network or forensic anomalies..." type="text" value={query} onChange={(e) => setQuery(e.target.value)} disabled={loading} />
               <div className="absolute right-space-sm flex items-center gap-space-xs">
                 {query && !loading && (
                   <button className="p-2 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" title="Clear query" type="button" onClick={() => { setQuery(""); inputRef.current?.focus() }}>
                     <MaterialIcon name="close" className="text-[18px]" />
                   </button>
                 )}
-                <button className="flex items-center gap-space-xs px-space-lg h-10 rounded bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container active:scale-[0.98] shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none" type="submit" disabled={loading || !query}>
+                <button className="flex items-center justify-center gap-space-xs h-10 w-10 px-0 sm:h-10 sm:w-auto sm:px-space-lg rounded bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container active:scale-[0.98] shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none" type="submit" disabled={loading || !query}>
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <MaterialIcon name="auto_awesome" className="text-[18px]" />
                   )}
-                  <span>{loading ? "Analyzing..." : "Analyze"}</span>
+                  <span className="hidden sm:inline">{loading ? "Analyzing..." : "Analyze"}</span>
                 </button>
               </div>
             </div>

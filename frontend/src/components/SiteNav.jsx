@@ -6,12 +6,12 @@ function SiteNav() {
 
   return (
     <>
-      <aside className="w-full bg-slate-900 text-slate-300 py-1.5 px-4 border-b border-slate-800 text-center flex items-center justify-center">
-        <p className="text-[11px] font-mono tracking-wider flex items-center justify-center gap-2">
+      <aside className="w-full bg-slate-900 text-slate-300 py-1.5 px-4 border-b border-slate-800 text-center flex items-center justify-center overflow-hidden">
+        <p className="text-[11px] font-mono tracking-wider flex items-center justify-center gap-2 whitespace-nowrap">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span className="font-semibold text-white">STATUTORY DEFENSE SYSTEM ACTIVE</span>
           <span className="text-slate-500">|</span>
-          <span>DEMO ENVIRONMENT · SIMULATED FINANCIAL TELEMETRY · EXPLAINABLE AI READY FOR FIU REPORTING</span>
+          <span className="text-slate-400 hidden sm:inline">DEMO ENVIRONMENT · SIMULATED FINANCIAL TELEMETRY · EXPLAINABLE AI READY FOR FIU REPORTING</span>
         </p>
       </aside>
 

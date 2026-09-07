@@ -40,7 +40,7 @@ function SiteFooter() {
         </div>
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800 text-xs text-slate-500">
           <p>© 2025 FLOWSIGHT Intelligence Inc. Operating in strict alignment with statutory reporting directives.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <a className="hover:text-slate-300 transition-colors" href="#">Data Retention Policy</a>
             <a className="hover:text-slate-300 transition-colors" href="#">Audit Framework</a>
             <span className="text-slate-400">System Status: <strong className="text-emerald-400 font-mono font-bold">100% Operational</strong></span>

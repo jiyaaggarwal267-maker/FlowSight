@@ -117,13 +117,13 @@ function Landing() {
           <div className="lg:col-span-6 w-full">
             <div className="relative bg-slate-950 text-slate-200 rounded-xl shadow-2xl border border-slate-800 overflow-hidden ring-1 ring-white/10">
               <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900 border-b border-slate-800">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <span className="w-3 h-3 rounded-full bg-[#ff5f56] inline-block shadow-sm"></span>
                   <span className="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block shadow-sm"></span>
                   <span className="w-3 h-3 rounded-full bg-[#27c93f] inline-block shadow-sm"></span>
-                  <span className="ml-2 font-mono text-[11px] text-slate-400 select-none">flowsight-engine-v4.2 — pid 84192 — [LIVE MONITOR]</span>
+                  <span className="ml-2 font-mono text-[11px] text-slate-400 select-none truncate">flowsight-engine-v4.2 — pid 84192 — [LIVE MONITOR]</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-red-950/80 border border-red-800/80 px-2 py-0.5 rounded text-[10px] font-mono text-red-300">
+                <div className="hidden sm:flex items-center gap-1.5 bg-red-950/80 border border-red-800/80 px-2 py-0.5 rounded text-[10px] font-mono text-red-300 flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
                   <span>LIVE TELEMETRY TRACE — 14.2ms / hop</span>
                 </div>
@@ -431,14 +431,14 @@ function Landing() {
                   <span className="text-emerald-400 font-bold">&gt; TXN-842193:</span>
                   <span className="text-white font-semibold ml-1">₹3,50,000</span> transferred via IMPS at 03:14:22 UTC
                 </div>
-                <span className="px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded text-[10px] whitespace-nowrap">Flag: Off-hours Velocity</span>
+                <span className="px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded text-[10px] sm:whitespace-nowrap">Flag: Off-hours Velocity</span>
               </div>
               <div className="bg-slate-950 p-2.5 rounded border border-red-800/80 text-slate-300 flex items-start justify-between gap-2 bg-red-950/20">
                 <div>
                   <span className="text-emerald-400 font-bold">&gt; TXN-842194:</span>
                   <span className="text-white font-semibold ml-1">₹3,49,500</span> fanned out to 7 sub-accounts within 180s
                 </div>
-                <span className="px-1.5 py-0.5 bg-red-950 text-red-300 border border-red-800 rounded text-[10px] whitespace-nowrap animate-pulse font-semibold">Flag: Smurfing Pattern [JUST FLAGGED]</span>
+                <span className="px-1.5 py-0.5 bg-red-950 text-red-300 border border-red-800 rounded text-[10px] sm:whitespace-nowrap animate-pulse font-semibold">Flag: Smurfing Pattern [JUST FLAGGED]</span>
               </div>
               <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-slate-400 gap-1">
                 <span className="text-emerald-400 font-bold">CONFIDENCE SCORE: 98.4%</span>

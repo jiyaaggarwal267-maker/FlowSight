@@ -19,7 +19,7 @@ function AdminHeader({ onMenu = () => {} }) {
         </button>
         <div className="flex items-center gap-space-sm min-w-0">
           <Emblem />
-          <span className="font-headline-sm text-headline-sm tracking-wider uppercase text-on-surface font-semibold whitespace-nowrap">
+          <span className="hidden md:inline font-headline-sm text-headline-sm tracking-wider uppercase text-on-surface font-semibold whitespace-nowrap sm:text-[12px] xl:text-headline-sm">
             FLOWSIGHT ADMIN CONSOLE
           </span>
         </div>
@@ -29,14 +29,15 @@ function AdminHeader({ onMenu = () => {} }) {
       </div>
       <div className="flex items-center gap-2 sm:gap-space-base min-w-0">
         <button
-          className="hidden sm:flex items-center gap-2 h-9 px-2 pl-3 rounded-lg bg-surface-container-lowest shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-on-surface-variant font-body-md text-body-md transition-colors hover:bg-surface-container cursor-pointer"
+          className="flex items-center justify-center h-9 w-9 sm:w-auto sm:px-2 sm:pl-3 rounded-lg bg-surface-container-lowest shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-on-surface-variant font-body-md text-body-md transition-colors hover:bg-surface-container cursor-pointer"
           onClick={openPalette}
+          aria-label="Open navigator"
           type="button"
         >
           <MaterialIcon name="search" className="text-[18px] text-outline" />
           <span className="hidden lg:inline text-outline">Search pages, rules, users…</span>
           <span className="hidden md:inline text-outline lg:hidden">Search…</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps">
+          <span className="hidden sm:inline ml-1 px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps">
             ⌘K
           </span>
         </button>

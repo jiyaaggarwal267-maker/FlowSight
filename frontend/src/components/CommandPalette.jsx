@@ -101,7 +101,7 @@ export default function CommandPalette() {
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center pt-[18vh] px-space-md bg-black/30 backdrop-blur-sm" onMouseDown={() => setOpen(false)}>
+    <div className="fixed inset-0 z-[90] flex items-start justify-center pt-[10vh] px-space-xs sm:px-space-md bg-black/30 backdrop-blur-sm" onMouseDown={() => setOpen(false)}>
       <div className="w-full max-w-xl bg-surface-container-lowest rounded-2xl shadow-2xl ring-1 ring-outline-variant overflow-hidden animate-page-in" onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-space-md px-space-md h-12">
           <MaterialIcon name="search" className="text-outline text-[20px]" />
@@ -151,7 +151,7 @@ export default function CommandPalette() {
             </button>
           ))}
         </div>
-        <div className="px-space-md py-space-xs flex items-center gap-space-md border-t border-surface-container-high bg-surface-container-lowest">
+        <div className="px-space-md py-space-xs flex flex-wrap items-center gap-x-space-md gap-y-1 border-t border-surface-container-high bg-surface-container-lowest">
           <span className="flex items-center gap-1 font-label-caps text-label-caps text-on-surface-variant">
             <kbd className="px-1 rounded bg-surface-container-high">↑↓</kbd> navigate
           </span>
