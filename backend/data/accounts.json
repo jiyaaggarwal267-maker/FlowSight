@@ -1,0 +1,1612 @@
+[
+  {
+    "acct_id": "AC-10200",
+    "entity": "Peacock Dyes 1",
+    "bank": "Yes",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10201",
+    "entity": "Rajesh Enterprises 2",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10202",
+    "entity": "GreenLeaf Farms 3",
+    "bank": "SBI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10203",
+    "entity": "Rajesh Enterprises 4",
+    "bank": "PNB",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10204",
+    "entity": "Bharat Solutions 5",
+    "bank": "Canara",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10205",
+    "entity": "Bharat Solutions 6",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10206",
+    "entity": "Silverline Foods 7",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10207",
+    "entity": "BlueLotus Exports 8",
+    "bank": "IndusInd",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10208",
+    "entity": "Rathi Steels 9",
+    "bank": "HDFC",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10209",
+    "entity": "Vertex Logistics 1",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10210",
+    "entity": "Kaveri Retail 2",
+    "bank": "ICICI",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10211",
+    "entity": "Vikram Traders 3",
+    "bank": "SBI",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10212",
+    "entity": "Vertex Logistics 4",
+    "bank": "ICICI",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10213",
+    "entity": "Zee Bakeries 5",
+    "bank": "Kotak",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10214",
+    "entity": "Vikram Traders 6",
+    "bank": "Canara",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10215",
+    "entity": "Zee Bakeries 7",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10216",
+    "entity": "Silverline Foods 8",
+    "bank": "ICICI",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10217",
+    "entity": "Everest Auto 9",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10218",
+    "entity": "Jain Metal Works 1",
+    "bank": "IndusInd",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10219",
+    "entity": "Bharat Solutions 2",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10220",
+    "entity": "BlueLotus Exports 3",
+    "bank": "HDFC",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10221",
+    "entity": "Jain Metal Works 4",
+    "bank": "Kotak",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10222",
+    "entity": "Anand Agencies 5",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10223",
+    "entity": "Anand Agencies 6",
+    "bank": "Kotak",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10224",
+    "entity": "Silverline Foods 7",
+    "bank": "Canara",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10225",
+    "entity": "Bharat Solutions 8",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10226",
+    "entity": "Jain Metal Works 9",
+    "bank": "Axis",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10227",
+    "entity": "GreenLeaf Farms 1",
+    "bank": "Kotak",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10228",
+    "entity": "Vertex Logistics 2",
+    "bank": "Canara",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10229",
+    "entity": "Om Exports 3",
+    "bank": "BOB",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10230",
+    "entity": "GreenLeaf Farms 4",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10231",
+    "entity": "Sunrise Grocers 5",
+    "bank": "Kotak",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10232",
+    "entity": "Sunrise Grocers 6",
+    "bank": "Yes",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10233",
+    "entity": "Kaveri Retail 7",
+    "bank": "Canara",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10234",
+    "entity": "Mehta Trading Co. 8",
+    "bank": "PNB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10235",
+    "entity": "Mehta Trading Co. 9",
+    "bank": "ICICI",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10236",
+    "entity": "Everest Auto 1",
+    "bank": "Kotak",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10237",
+    "entity": "Shree Balaji Agencies 2",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10238",
+    "entity": "Everest Auto 3",
+    "bank": "Yes",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10239",
+    "entity": "Bharat Solutions 4",
+    "bank": "ICICI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10240",
+    "entity": "Zee Bakeries 5",
+    "bank": "IndusInd",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10241",
+    "entity": "Rathi Steels 6",
+    "bank": "Kotak",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10242",
+    "entity": "Shree Balaji Agencies 7",
+    "bank": "PNB",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10243",
+    "entity": "Everest Auto 8",
+    "bank": "PNB",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10244",
+    "entity": "Anand Agencies 9",
+    "bank": "Yes",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10245",
+    "entity": "Sharma Constructions 1",
+    "bank": "IndusInd",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10246",
+    "entity": "Kaveri Retail 2",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10247",
+    "entity": "Rajesh Enterprises 3",
+    "bank": "BOB",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10248",
+    "entity": "Shree Balaji Agencies 4",
+    "bank": "HDFC",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10249",
+    "entity": "Rathi Steels 5",
+    "bank": "SBI",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10250",
+    "entity": "Shree Balaji Agencies 6",
+    "bank": "BOB",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10251",
+    "entity": "Om Exports 7",
+    "bank": "HDFC",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10252",
+    "entity": "Peacock Dyes 8",
+    "bank": "IndusInd",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10253",
+    "entity": "Everest Auto 9",
+    "bank": "ICICI",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10254",
+    "entity": "Rathi Steels 1",
+    "bank": "Axis",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10255",
+    "entity": "Mehta Trading Co. 2",
+    "bank": "SBI",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10256",
+    "entity": "Everest Auto 3",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10257",
+    "entity": "Silverline Foods 4",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10258",
+    "entity": "Anand Agencies 5",
+    "bank": "Kotak",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10259",
+    "entity": "Shree Balaji Agencies 6",
+    "bank": "SBI",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10260",
+    "entity": "BlueLotus Exports 7",
+    "bank": "Kotak",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10261",
+    "entity": "Mehta Trading Co. 8",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10262",
+    "entity": "Zee Bakeries 9",
+    "bank": "Kotak",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10263",
+    "entity": "Rathi Steels 1",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10264",
+    "entity": "Vertex Logistics 2",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10265",
+    "entity": "Zee Bakeries 3",
+    "bank": "ICICI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10266",
+    "entity": "GreenLeaf Farms 4",
+    "bank": "HDFC",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10267",
+    "entity": "Peacock Dyes 5",
+    "bank": "Yes",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10268",
+    "entity": "Paras Pharma 6",
+    "bank": "Kotak",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10269",
+    "entity": "Universal Impex 7",
+    "bank": "BOB",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10270",
+    "entity": "Mehta Trading Co. 8",
+    "bank": "SBI",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10271",
+    "entity": "Silverline Foods 9",
+    "bank": "Kotak",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10272",
+    "entity": "Kiran Textiles 1",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10273",
+    "entity": "Vertex Logistics 2",
+    "bank": "BOB",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10274",
+    "entity": "Paras Pharma 3",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10275",
+    "entity": "Vikram Traders 4",
+    "bank": "Canara",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10276",
+    "entity": "Kiran Textiles 5",
+    "bank": "PNB",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10277",
+    "entity": "Rathi Steels 6",
+    "bank": "Canara",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10278",
+    "entity": "Vikram Traders 7",
+    "bank": "ICICI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10279",
+    "entity": "Anand Agencies 8",
+    "bank": "HDFC",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10280",
+    "entity": "Sunrise Grocers 9",
+    "bank": "Kotak",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10281",
+    "entity": "Universal Impex 1",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10282",
+    "entity": "Rathi Steels 2",
+    "bank": "IndusInd",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10283",
+    "entity": "Kaveri Retail 3",
+    "bank": "ICICI",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10284",
+    "entity": "Peacock Dyes 4",
+    "bank": "Kotak",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10285",
+    "entity": "Kiran Textiles 5",
+    "bank": "ICICI",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10286",
+    "entity": "Mehta Trading Co. 6",
+    "bank": "Kotak",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10287",
+    "entity": "Kaveri Retail 7",
+    "bank": "SBI",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10288",
+    "entity": "Om Exports 8",
+    "bank": "PNB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10289",
+    "entity": "Rajesh Enterprises 9",
+    "bank": "Kotak",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10290",
+    "entity": "Om Exports 1",
+    "bank": "Canara",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10291",
+    "entity": "Anand Agencies 2",
+    "bank": "Axis",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10292",
+    "entity": "Shree Balaji Agencies 3",
+    "bank": "HDFC",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10293",
+    "entity": "Sunrise Grocers 4",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10294",
+    "entity": "Vertex Logistics 5",
+    "bank": "IndusInd",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10295",
+    "entity": "Rajesh Enterprises 6",
+    "bank": "ICICI",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10296",
+    "entity": "Sharma Constructions 7",
+    "bank": "Axis",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10297",
+    "entity": "BlueLotus Exports 8",
+    "bank": "IndusInd",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10298",
+    "entity": "Sharma Constructions 9",
+    "bank": "Canara",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10299",
+    "entity": "GreenLeaf Farms 1",
+    "bank": "Kotak",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10300",
+    "entity": "Shree Balaji Agencies 2",
+    "bank": "BOB",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10301",
+    "entity": "Bharat Solutions 3",
+    "bank": "Kotak",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10302",
+    "entity": "Vertex Logistics 4",
+    "bank": "BOB",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10303",
+    "entity": "Bharat Solutions 5",
+    "bank": "SBI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10304",
+    "entity": "Nova Digital 6",
+    "bank": "PNB",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10305",
+    "entity": "Modern Cements 7",
+    "bank": "IndusInd",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10306",
+    "entity": "Anand Agencies 8",
+    "bank": "HDFC",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10307",
+    "entity": "Rajesh Enterprises 9",
+    "bank": "Yes",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10308",
+    "entity": "Peacock Dyes 1",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10309",
+    "entity": "Om Exports 2",
+    "bank": "Yes",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10310",
+    "entity": "BlueLotus Exports 3",
+    "bank": "Kotak",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10311",
+    "entity": "Peacock Dyes 4",
+    "bank": "IndusInd",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10312",
+    "entity": "Peacock Dyes 5",
+    "bank": "SBI",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10313",
+    "entity": "Shree Balaji Agencies 6",
+    "bank": "Yes",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10314",
+    "entity": "Vikram Traders 7",
+    "bank": "Axis",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10315",
+    "entity": "Anand Agencies 8",
+    "bank": "BOB",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10316",
+    "entity": "Kaveri Retail 9",
+    "bank": "ICICI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10317",
+    "entity": "Rajesh Enterprises 1",
+    "bank": "ICICI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10318",
+    "entity": "Anand Agencies 2",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10319",
+    "entity": "Sharma Constructions 3",
+    "bank": "Axis",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10320",
+    "entity": "Bharat Solutions 4",
+    "bank": "IndusInd",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10321",
+    "entity": "Om Exports 5",
+    "bank": "Kotak",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10322",
+    "entity": "Silverline Foods 6",
+    "bank": "Axis",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10323",
+    "entity": "Peacock Dyes 7",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10324",
+    "entity": "Kiran Textiles 8",
+    "bank": "Axis",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10325",
+    "entity": "Peacock Dyes 9",
+    "bank": "PNB",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10326",
+    "entity": "Kiran Textiles 1",
+    "bank": "HDFC",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10327",
+    "entity": "Universal Impex 2",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10328",
+    "entity": "Mehta Trading Co. 3",
+    "bank": "IndusInd",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10329",
+    "entity": "Zee Bakeries 4",
+    "bank": "Canara",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10330",
+    "entity": "Vikram Traders 5",
+    "bank": "BOB",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10331",
+    "entity": "BlueLotus Exports 6",
+    "bank": "Yes",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10332",
+    "entity": "Kaveri Retail 7",
+    "bank": "PNB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10333",
+    "entity": "Sharma Constructions 8",
+    "bank": "HDFC",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10334",
+    "entity": "Vertex Logistics 9",
+    "bank": "Yes",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10335",
+    "entity": "BlueLotus Exports 1",
+    "bank": "BOB",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10336",
+    "entity": "Om Exports 2",
+    "bank": "PNB",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10337",
+    "entity": "Kaveri Retail 3",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10338",
+    "entity": "Anand Agencies 4",
+    "bank": "IndusInd",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10339",
+    "entity": "Sharma Constructions 5",
+    "bank": "Yes",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10340",
+    "entity": "Everest Auto 6",
+    "bank": "Kotak",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10341",
+    "entity": "Zee Bakeries 7",
+    "bank": "SBI",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10342",
+    "entity": "Rajesh Enterprises 8",
+    "bank": "IndusInd",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10343",
+    "entity": "Rajesh Enterprises 9",
+    "bank": "ICICI",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10344",
+    "entity": "Sunrise Grocers 1",
+    "bank": "PNB",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10345",
+    "entity": "Sharma Constructions 2",
+    "bank": "HDFC",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10346",
+    "entity": "Nova Digital 3",
+    "bank": "ICICI",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10347",
+    "entity": "Vertex Logistics 4",
+    "bank": "Axis",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10348",
+    "entity": "Vikram Traders 5",
+    "bank": "PNB",
+    "city": "Pune",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10349",
+    "entity": "Kiran Textiles 6",
+    "bank": "IndusInd",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10350",
+    "entity": "GreenLeaf Farms 7",
+    "bank": "IndusInd",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10351",
+    "entity": "Shree Balaji Agencies 8",
+    "bank": "IndusInd",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10352",
+    "entity": "Modern Cements 9",
+    "bank": "Kotak",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10353",
+    "entity": "Everest Auto 1",
+    "bank": "Kotak",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10354",
+    "entity": "Zee Bakeries 2",
+    "bank": "SBI",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10355",
+    "entity": "Anand Agencies 3",
+    "bank": "BOB",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10356",
+    "entity": "Anand Agencies 4",
+    "bank": "PNB",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10357",
+    "entity": "Sharma Constructions 5",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10358",
+    "entity": "Kaveri Retail 6",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10359",
+    "entity": "Anand Agencies 7",
+    "bank": "PNB",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10360",
+    "entity": "Vertex Logistics 8",
+    "bank": "IndusInd",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10361",
+    "entity": "Kiran Textiles 9",
+    "bank": "Canara",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10362",
+    "entity": "Sunrise Grocers 1",
+    "bank": "Canara",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10363",
+    "entity": "Silverline Foods 2",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10364",
+    "entity": "Silverline Foods 3",
+    "bank": "Yes",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10365",
+    "entity": "Vertex Logistics 4",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10366",
+    "entity": "Everest Auto 5",
+    "bank": "Canara",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10367",
+    "entity": "Kiran Textiles 6",
+    "bank": "IndusInd",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10368",
+    "entity": "Silverline Foods 7",
+    "bank": "SBI",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10369",
+    "entity": "Rathi Steels 8",
+    "bank": "HDFC",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10370",
+    "entity": "Modern Cements 9",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10371",
+    "entity": "Om Exports 1",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10372",
+    "entity": "Kiran Textiles 2",
+    "bank": "Axis",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10373",
+    "entity": "Rajesh Enterprises 3",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10374",
+    "entity": "Mehta Trading Co. 4",
+    "bank": "SBI",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10375",
+    "entity": "Kaveri Retail 5",
+    "bank": "PNB",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10376",
+    "entity": "Vikram Traders 6",
+    "bank": "IndusInd",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10377",
+    "entity": "Jain Metal Works 7",
+    "bank": "ICICI",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10378",
+    "entity": "Om Exports 8",
+    "bank": "ICICI",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10379",
+    "entity": "BlueLotus Exports 9",
+    "bank": "Kotak",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10380",
+    "entity": "Rathi Steels 1",
+    "bank": "HDFC",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10381",
+    "entity": "Kiran Textiles 2",
+    "bank": "Yes",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10382",
+    "entity": "Paras Pharma 3",
+    "bank": "Kotak",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10383",
+    "entity": "Peacock Dyes 4",
+    "bank": "Yes",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10384",
+    "entity": "Bharat Solutions 5",
+    "bank": "SBI",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10385",
+    "entity": "Kaveri Retail 6",
+    "bank": "Yes",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10386",
+    "entity": "Rajesh Enterprises 7",
+    "bank": "Canara",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10387",
+    "entity": "Paras Pharma 8",
+    "bank": "ICICI",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10388",
+    "entity": "Sharma Constructions 9",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10389",
+    "entity": "Sunrise Grocers 1",
+    "bank": "Yes",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10390",
+    "entity": "Vertex Logistics 2",
+    "bank": "Canara",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10391",
+    "entity": "Zee Bakeries 3",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10392",
+    "entity": "Rajesh Enterprises 4",
+    "bank": "IndusInd",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10393",
+    "entity": "Silverline Foods 5",
+    "bank": "Canara",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10394",
+    "entity": "Silverline Foods 6",
+    "bank": "IndusInd",
+    "city": "Mumbai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10395",
+    "entity": "Vikram Traders 7",
+    "bank": "PNB",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10396",
+    "entity": "Anand Agencies 8",
+    "bank": "Yes",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10397",
+    "entity": "Paras Pharma 9",
+    "bank": "SBI",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10398",
+    "entity": "Peacock Dyes 1",
+    "bank": "BOB",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10399",
+    "entity": "Kiran Textiles 2",
+    "bank": "PNB",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10400",
+    "entity": "Anand Agencies 3",
+    "bank": "Axis",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10401",
+    "entity": "Silverline Foods 4",
+    "bank": "ICICI",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10402",
+    "entity": "Everest Auto 5",
+    "bank": "BOB",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10403",
+    "entity": "Silverline Foods 6",
+    "bank": "Yes",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10404",
+    "entity": "Sharma Constructions 7",
+    "bank": "ICICI",
+    "city": "Bengaluru",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10405",
+    "entity": "Peacock Dyes 8",
+    "bank": "PNB",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10406",
+    "entity": "Zee Bakeries 9",
+    "bank": "IndusInd",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10407",
+    "entity": "Nova Digital 1",
+    "bank": "Yes",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10408",
+    "entity": "Rajesh Enterprises 2",
+    "bank": "HDFC",
+    "city": "Kolkata",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10409",
+    "entity": "Vertex Logistics 3",
+    "bank": "Kotak",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10410",
+    "entity": "Silverline Foods 4",
+    "bank": "BOB",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10411",
+    "entity": "Rajesh Enterprises 5",
+    "bank": "Axis",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10412",
+    "entity": "Silverline Foods 6",
+    "bank": "HDFC",
+    "city": "Mumbai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10413",
+    "entity": "Shree Balaji Agencies 7",
+    "bank": "ICICI",
+    "city": "Pune",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10414",
+    "entity": "Universal Impex 8",
+    "bank": "IndusInd",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10415",
+    "entity": "Vikram Traders 9",
+    "bank": "Yes",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10416",
+    "entity": "Kiran Textiles 1",
+    "bank": "PNB",
+    "city": "Delhi NCR",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10417",
+    "entity": "Jain Metal Works 2",
+    "bank": "Canara",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10418",
+    "entity": "Rathi Steels 3",
+    "bank": "Yes",
+    "city": "Ahmedabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10419",
+    "entity": "Peacock Dyes 4",
+    "bank": "IndusInd",
+    "city": "Hyderabad",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10420",
+    "entity": "Everest Auto 5",
+    "bank": "ICICI",
+    "city": "Bengaluru",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10421",
+    "entity": "Vertex Logistics 6",
+    "bank": "Axis",
+    "city": "Chennai",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10422",
+    "entity": "Sunrise Grocers 7",
+    "bank": "PNB",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10423",
+    "entity": "Rathi Steels 8",
+    "bank": "BOB",
+    "city": "Kolkata",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10424",
+    "entity": "Paras Pharma 9",
+    "bank": "PNB",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10425",
+    "entity": "Vertex Logistics 1",
+    "bank": "PNB",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10426",
+    "entity": "Silverline Foods 2",
+    "bank": "Kotak",
+    "city": "Ahmedabad",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10427",
+    "entity": "Nova Digital 3",
+    "bank": "BOB",
+    "city": "Delhi NCR",
+    "category": "business"
+  },
+  {
+    "acct_id": "AC-10428",
+    "entity": "Nova Digital 4",
+    "bank": "ICICI",
+    "city": "Chennai",
+    "category": "retail"
+  },
+  {
+    "acct_id": "AC-10429",
+    "entity": "Kiran Textiles 5",
+    "bank": "Canara",
+    "city": "Hyderabad",
+    "category": "retail"
+  }
+]

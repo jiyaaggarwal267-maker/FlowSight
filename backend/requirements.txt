@@ -1,0 +1,5 @@
+fastapi==0.115.14
+networkx==3.6.1
+pandas==3.0.5
+uvicorn==0.35.0
+SQLAlchemy==2.0.52
