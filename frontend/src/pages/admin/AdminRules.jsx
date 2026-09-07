@@ -294,6 +294,41 @@ const PRESETS = {
   },
 }
 
+const CAT_TO_PATTERN = {
+  "Velocity": "fan_out",
+  "AML Graph": "circular_flow",
+  "Identity Smurfing": "fan_in",
+  "Anomaly Profile": "behavioral_deviation",
+}
+
+const categoryKeyFor = (r) =>
+  PRESETS[r.pattern]?.catKey || PRESETS[CAT_TO_PATTERN[r.pattern]]?.catKey || "vel"
+
+const genericPreset = (rule) => ({
+  cat: "Custom",
+  catKey: "vel",
+  vizIcon: "rule",
+  vizLabel: "Custom Staged Rule",
+  control: "sensitivity",
+  controlLabelClass: "text-primary",
+  desc: "Custom detection rule staged from the rule builder. Thresholds follow the medium sensitivity baseline until an L2 officer signs off.",
+  viz: (
+    <svg className="h-8 w-44 text-primary" fill="none" viewBox="0 0 176 32" xmlns="http://www.w3.org/2000/svg">
+      <circle className="fill-primary stroke-primary" cx="20" cy="16" r="6" strokeWidth="2"></circle>
+      <path d="M26 16L80 7" stroke="currentColor" strokeWidth="1.5"></path>
+      <path d="M26 16L80 16" stroke="currentColor" strokeWidth="1.5"></path>
+      <path d="M26 16L80 25" stroke="currentColor" strokeWidth="1.5"></path>
+      <circle className="fill-surface-container stroke-outline" cx="86" cy="7" r="4" strokeWidth="1.5"></circle>
+      <circle className="fill-surface-container stroke-outline" cx="86" cy="16" r="4" strokeWidth="1.5"></circle>
+      <circle className="fill-surface-container stroke-outline" cx="86" cy="25" r="4" strokeWidth="1.5"></circle>
+      <circle className="fill-secondary-container stroke-primary" cx="140" cy="10" r="3"></circle>
+      <circle className="fill-secondary-container stroke-primary" cx="140" cy="22" r="3"></circle>
+    </svg>
+  ),
+})
+
+const presetFor = (r) => PRESETS[r.pattern] || genericPreset(r)
+
 const CATEGORY_DEFS = [
   { key: "all", label: "All Rules" },
   { key: "aml", label: "AML Graph" },
@@ -453,10 +488,10 @@ function AdminRules() {
 
   const CATEGORIES = CATEGORY_DEFS.map((c) => ({
     ...c,
-    count: c.key === "all" ? rules.length : rules.filter((r) => PRESETS[r.pattern]?.catKey === c.key).length,
+    count: c.key === "all" ? rules.length : rules.filter((r) => categoryKeyFor(r) === c.key).length,
   }))
 
-  const visible = rules.filter((r) => activeCat === "all" || PRESETS[r.pattern]?.catKey === activeCat)
+  const visible = rules.filter((r) => activeCat === "all" || categoryKeyFor(r) === activeCat)
   const activeCount = rules.filter((r) => r.status === "enabled").length
 
   const onSave = async (id, patch) => {
@@ -552,7 +587,7 @@ function AdminRules() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-lg mb-space-xl">
           {visible.map((r) => (
-            <RuleCard key={r.id} rule={r} preset={PRESETS[r.pattern]} onSave={onSave} />
+            <RuleCard key={r.id} rule={r} preset={presetFor(r)} onSave={onSave} />
           ))}
         </div>
       )}
@@ -618,7 +653,7 @@ function AdminRules() {
             setBuilderOpen(false)
             setStaging(true)
             api
-              .createRule({ name, pattern: cat, sensitivity: "medium" })
+              .createRule({ name, pattern: CAT_TO_PATTERN[cat] || cat, sensitivity: "medium" })
               .then((created) => {
                 setRules((prev) => [created, ...prev])
                 setStaged(true)
