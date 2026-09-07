@@ -55,10 +55,17 @@ _started = threading.Event()
 @app.on_event("startup")
 def _startup() -> None:
     def _init() -> None:
+        from sqlalchemy import inspect, text
         from .database import Base, engine
 
         with engine.begin() as conn:
             Base.metadata.create_all(bind=conn)
+            insp = inspect(conn)
+            _add_column_if_missing(conn, insp, "accounts",
+                                   ("frozen", "BOOLEAN", "0"),
+                                   ("freeze_reason", "VARCHAR(256)", "''"))
+            _add_column_if_missing(conn, insp, "investigations",
+                                   ("findings_json", "JSON", "'[]'"))
         from .database import SessionLocal
 
         db = SessionLocal()
@@ -70,6 +77,15 @@ def _startup() -> None:
             db.close()
 
     threading.Thread(target=_init, daemon=True).start()
+
+
+def _add_column_if_missing(conn, insp, table: str, *columns) -> None:
+    from sqlalchemy import text
+    existing = {c["name"] for c in insp.get_columns(table)}
+    for name, dtype, dflt in columns:
+        if name not in existing:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {dtype} "
+                              f"NOT NULL DEFAULT {dflt}"))
 
 
 # ── serializers ───────────────────────────────────────────────────────
@@ -100,6 +116,8 @@ def _acct_dict(a: Account, with_risk: bool = True) -> dict:
         "total_received": a.total_received,
         "risk_score": a.risk_score,
         "risk": a.risk_score,
+        "frozen": bool(getattr(a, "frozen", False)),
+        "freeze_reason": getattr(a, "freeze_reason", "") or "",
     }
 
 
@@ -144,6 +162,7 @@ def _inv_dict(i: Investigation) -> dict:
         "risk_score": i.risk_score,
         "summary": i.summary_json or {},
         "assigned_to": i.assigned_to,
+        "findings": list(getattr(i, "findings_json", None) or []),
         "created_at": i.created_at.isoformat() if i.created_at else None,
     }
 
@@ -422,6 +441,31 @@ def account_detail(account_id: str, db: Session = Depends(get_db)) -> dict:
     }
 
 
+@app.patch("/api/accounts/{account_id}")
+def account_update(
+    account_id: str,
+    payload: dict,
+    user: str = Query("analyst"),
+    db: Session = Depends(get_db),
+) -> dict:
+    acct = db.get(Account, account_id)
+    if not acct:
+        raise HTTPException(status_code=404, detail="account not found")
+    allowed = {"frozen", "freeze_reason"}
+    if "frozen" in payload:
+        acct.frozen = bool(payload["frozen"])
+    if "freeze_reason" in payload:
+        acct.freeze_reason = str(payload["freeze_reason"])
+    if not any(k in payload for k in allowed):
+        raise HTTPException(status_code=400, detail="no updatable fields provided")
+    db.commit()
+    audit(db, user=user, action="account.update",
+          resource=f"accounts/{acct.id}",
+          detail={"frozen": acct.frozen, "freeze_reason": acct.freeze_reason})
+    db.refresh(acct)
+    return _acct_dict(acct)
+
+
 @app.get("/api/transactions")
 def transactions(
     limit: int = Query(200, ge=1, le=5000),
@@ -691,6 +735,60 @@ def investigation_timeline(
     }
 
 
+@app.patch("/api/investigations/{investigation_id}")
+def investigation_update(
+    investigation_id: str,
+    payload: dict,
+    user: str = Query("analyst"),
+    db: Session = Depends(get_db),
+) -> dict:
+    inv = db.get(Investigation, investigation_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="investigation not found")
+    old = _inv_dict(inv)
+    allowed = {"status", "assigned_to"}
+    changed = {k: v for k, v in payload.items() if k in allowed}
+    if not changed:
+        raise HTTPException(status_code=400, detail="no updatable fields provided")
+    for k, v in changed.items():
+        setattr(inv, k, v)
+    db.commit()
+    audit(db, user=user, action="investigation.update",
+          resource=f"investigations/{inv.id}",
+          detail={"before": old, "after": _inv_dict(inv)})
+    db.refresh(inv)
+    return _inv_dict(inv)
+
+
+@app.post("/api/investigations/{investigation_id}/findings")
+def investigation_append_findings(
+    investigation_id: str,
+    payload: dict,
+    user: str = Query("analyst"),
+    db: Session = Depends(get_db),
+) -> dict:
+    inv = db.get(Investigation, investigation_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="investigation not found")
+    existing = list(getattr(inv, "findings_json", None) or [])
+    finding = {
+        "id": f"F-{len(existing) + 1:04d}",
+        "text": payload.get("finding") or payload.get("text") or "",
+        "evidence": payload.get("evidence") or "",
+        "patterns": payload.get("patterns") or [],
+        "risk_score": payload.get("risk_score"),
+        "source": payload.get("source") or "AI Investigator",
+    }
+    existing.append(finding)
+    inv.findings_json = existing
+    db.commit()
+    audit(db, user=user, action="investigation.findings.append",
+          resource=f"investigations/{inv.id}",
+          detail={"finding_id": finding["id"]})
+    db.refresh(inv)
+    return _inv_dict(inv)
+
+
 # ── 6. entities / clusters / embedded patterns (frontend client) ──────
 
 
@@ -766,6 +864,37 @@ def health(db: Session = Depends(get_db)) -> dict:
 def admin_rules(db: Session = Depends(get_db)) -> dict:
     rows = db.execute(select(DetectionRule).order_by(DetectionRule.id)).scalars().all()
     return {"total": len(rows), "items": [_rule_dict(r) for r in rows]}
+
+
+@app.post("/api/admin/rules")
+def create_rule(
+    payload: dict,
+    user: str = Query("admin"),
+    db: Session = Depends(get_db),
+) -> dict:
+    name = payload.get("name") or payload.get("id") or "Untitled Rule"
+    pattern = payload.get("pattern") or payload.get("category", "").lower().replace(" ", "_")
+    rule = DetectionRule(
+        id=payload.get("id") or f"RULE-CUST-{_next_rule_seq(db)}",
+        name=name,
+        pattern=pattern,
+        status="disabled",
+        sensitivity=payload.get("sensitivity", "medium"),
+        weight=int(payload.get("weight", 0)),
+        thresholds=payload.get("thresholds") or {},
+        updated_at=datetime.utcnow(),
+    )
+    db.add(rule)
+    db.commit()
+    audit(db, user=user, action="rule.create", resource=f"admin/rules/{rule.id}",
+          detail={"name": name, "pattern": pattern})
+    db.refresh(rule)
+    return _rule_dict(rule)
+
+
+def _next_rule_seq(db: Session) -> int:
+    count = db.execute(select(func.count()).select_from(DetectionRule)).scalar() or 0
+    return int(count) + 1
 
 
 @app.patch("/api/admin/rules/{rule_id}")

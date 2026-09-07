@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { Link, useParams } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
 import { api } from "../../lib/api.js"
-import { notify } from "../../lib/runtime.js"
 
 function InvestigationView() {
   const { id = "INV-001" } = useParams()
@@ -10,6 +9,32 @@ function InvestigationView() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalContent, setModalContent] = useState([])
+  const [actionBusy, setActionBusy] = useState("")
+  const [statusMsg, setStatusMsg] = useState("")
+
+  const assignLead = () => {
+    if (actionBusy) return
+    setActionBusy("assign")
+    setStatusMsg("")
+    api
+      .updateInvestigation(id, { assigned_to: "Senior Compliance Lead", status: "in_review" })
+      .then(() => {
+        setStatusMsg(`Case ${id} escalated to Senior Compliance Lead · Tier-2 SIU queue.`)
+      })
+      .catch((err) => setStatusMsg(`Escalation failed: ${err.message}`))
+      .finally(() => setActionBusy(""))
+  }
+
+  const generateReport = () => {
+    if (actionBusy) return
+    setActionBusy("report")
+    setStatusMsg("")
+    api
+      .generateReport({ investigation_id: id })
+      .then((r) => setStatusMsg(`Investigation report generated · ${r.id}`))
+      .catch((err) => setStatusMsg(`Report generation failed: ${err.message}`))
+      .finally(() => setActionBusy(""))
+  }
 
   useEffect(() => {
     let alive = true
@@ -199,10 +224,10 @@ function InvestigationView() {
               <MaterialIcon name="smart_toy" className="text-[18px]" />
               <span className="font-label-sm text-label-sm font-medium">Investigate with AI</span>
             </Link>
-            <Link className="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-inverse-surface text-inverse-on-surface shadow-sm hover:opacity-90 transition-all active:scale-[0.98]" to="/analyst/reports">
+            <button className="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-inverse-surface text-inverse-on-surface shadow-sm hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer" onClick={generateReport} disabled={!!actionBusy} type="button">
               <MaterialIcon name="download_for_offline" className="text-[18px]" />
-              <span className="font-label-sm text-label-sm font-medium">Generate Investigation Report</span>
-            </Link>
+              <span className="font-label-sm text-label-sm font-medium">{actionBusy === "report" ? "Generating…" : "Generate Investigation Report"}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -460,30 +485,36 @@ function InvestigationView() {
               <span className="font-label-caps text-label-caps bg-primary-container text-on-primary px-space-xs py-0.5 rounded">Action Required</span>
             </div>
             <div className="flex flex-col gap-space-sm">
-              <button className="w-full text-left p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between group active:scale-[0.99] cursor-pointer" type="button" onClick={() => notify({ title: `Case ${id} escalated`, body: "Assigned to Senior Compliance Lead · Tier-2 SIU queue.", tone: "primary" })}>
+              <button className="w-full text-left p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between group active:scale-[0.99] cursor-pointer disabled:opacity-60" type="button" onClick={assignLead} disabled={!!actionBusy}>
                 <div className="flex items-center gap-space-sm min-w-0">
                   <div className="w-9 h-9 rounded-lg bg-surface-container-highest text-on-surface flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors">
                     <MaterialIcon name="person_add" className="text-[20px]" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-headline-sm text-headline-sm text-on-surface truncate">Assign to Senior Compliance Lead</span>
+                    <span className="font-headline-sm text-headline-sm text-on-surface truncate">{actionBusy === "assign" ? "Assigning…" : "Assign to Senior Compliance Lead"}</span>
                     <span className="font-body-sm text-body-sm text-on-surface-variant truncate">Escalate to Tier 2 SIU</span>
                   </div>
                 </div>
                 <MaterialIcon name="chevron_right" className="text-outline group-hover:text-on-surface transition-colors" />
               </button>
-              <Link className="w-full text-left p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between group active:scale-[0.99]" to="/analyst/reports">
+              <button className="w-full text-left p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between group active:scale-[0.99] cursor-pointer disabled:opacity-60" type="button" onClick={() => generateReport()} disabled={!!actionBusy}>
                 <div className="flex items-center gap-space-sm min-w-0">
                   <div className="w-9 h-9 rounded-lg bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0 group-hover:bg-error group-hover:text-on-error transition-colors">
                     <MaterialIcon name="send_and_archive" className="text-[20px]" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-headline-sm text-headline-sm text-on-surface truncate">Export Regulatory SAR / STR Filing</span>
+                    <span className="font-headline-sm text-headline-sm text-on-surface truncate">{actionBusy === "report" ? "Generating…" : "Export Regulatory SAR / STR Filing"}</span>
                     <span className="font-body-sm text-body-sm text-on-surface-variant truncate">FIU-IND compliant package</span>
                   </div>
                 </div>
                 <MaterialIcon name="chevron_right" className="text-outline group-hover:text-on-surface transition-colors" />
-              </Link>
+              </button>
+              {statusMsg && (
+                <div className="px-space-md py-space-sm rounded-lg bg-surface-container text-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-xs">
+                  <MaterialIcon name={statusMsg.includes("failed") ? "error" : "task_alt"} className="text-[16px] text-primary" />
+                  <span>{statusMsg}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

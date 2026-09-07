@@ -36,7 +36,13 @@ export const api = {
   updateAlert: (id, payload) =>
     request(`/api/alerts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   network: (params) => request(`/api/network${qs(params)}`),
+  updateAccount: (id, payload) =>
+    request(`/api/accounts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   investigation: (id) => request(`/api/investigations/${encodeURIComponent(id)}`),
+  updateInvestigation: (id, payload) =>
+    request(`/api/investigations/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  appendFinding: (id, payload) =>
+    request(`/api/investigations/${encodeURIComponent(id)}/findings`, { method: "POST", body: JSON.stringify(payload) }),
   investigationTimeline: (id) =>
     request(`/api/investigations/${encodeURIComponent(id)}/timeline`),
   aiQuery: (payload) =>
@@ -55,6 +61,8 @@ export const api = {
   updateUser: (id, payload) =>
     request(`/api/admin/users/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   rules: (params) => request(`/api/admin/rules${qs(params)}`),
+  createRule: (payload) =>
+    request("/api/admin/rules", { method: "POST", body: JSON.stringify(payload) }),
   updateRule: (id, payload) =>
     request(`/api/admin/rules/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateRulesBulk: (payload) =>

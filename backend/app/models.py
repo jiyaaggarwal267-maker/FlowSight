@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -29,6 +29,8 @@ class Account(Base):
     total_sent: Mapped[float] = mapped_column(Float, default=0.0)
     total_received: Mapped[float] = mapped_column(Float, default=0.0)
     risk_score: Mapped[int] = mapped_column(Integer, default=0)
+    frozen: Mapped[bool] = mapped_column(Boolean, default=False)
+    freeze_reason: Mapped[str] = mapped_column(String(256), default="")
 
     transactions_out: Mapped[list["Transaction"]] = relationship(
         foreign_keys="Transaction.from_account", back_populates="sender"
@@ -90,6 +92,7 @@ class Investigation(Base):
     status: Mapped[str] = mapped_column(String(24), default="open")
     risk_score: Mapped[int] = mapped_column(Integer, default=0)
     summary_json: Mapped[dict] = mapped_column(JSON)
+    findings_json: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     assigned_to: Mapped[str] = mapped_column(String(64), default="")
 
