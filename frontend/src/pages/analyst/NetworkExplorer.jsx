@@ -17,6 +17,11 @@ function NetworkExplorer() {
   const [view, setView] = useState({ x: 0, y: 0, k: 1 })
   const [hovered, setHovered] = useState(null)
   const [dragging, setDragging] = useState(null)
+  const [query, setQuery] = useState("")
+  const [highRiskOnly, setHighRiskOnly] = useState(false)
+  const [minFlowOnly, setMinFlowOnly] = useState(false)
+  const [channels, setChannels] = useState([])
+  const minFlow = 100000
   const canvasRef = useRef(null)
   const loading = useDemoLoad(650)
 
@@ -70,6 +75,34 @@ function NetworkExplorer() {
 
   const fitScreen = () => setView({ x: 0, y: 0, k: 1 })
 
+  const q = query.trim().toLowerCase()
+  const matchesQuery = (n) => !q || [n.id, n.entity, n.bank, n.city].filter(Boolean).some((f) => String(f).toLowerCase().includes(q))
+
+  const visibleNodeIdx = nodesData
+    .map((n, i) => ({ n, i }))
+    .filter(({ n }) => matchesQuery(n) && (!highRiskOnly || n.risk_score >= 80) && (channels.length === 0 || (n.channels || []).some((c) => channels.includes(c))))
+  const visibleNodeIds = new Set(visibleNodeIdx.map((e) => e.n.id))
+  const visibleEdges = edgesData.filter((e) => {
+    if (minFlowOnly && (e.amount || 0) < minFlow) return false
+    if (channels.length > 0 && !channels.includes(e.channel)) return false
+    const from = nodesData.find((n) => n.id === e.from) || nodeById(e.from)
+    const to = nodesData.find((n) => n.id === e.to) || nodeById(e.to)
+    if (!from || !to) return true
+    return visibleNodeIds.has(from.id) && visibleNodeIds.has(to.id)
+  })
+
+  const toggleChannel = (c) =>
+    setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
+
+  const resetFilters = () => {
+    setQuery("")
+    setHighRiskOnly(false)
+    setMinFlowOnly(false)
+    setChannels([])
+    setSuspiciousOnly(true)
+    fitScreen()
+  }
+
   const onPointerDown = (e) => {
     setDragging({ x: e.clientX, y: e.clientY, vx: view.x, vy: view.y })
     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -105,7 +138,11 @@ function NetworkExplorer() {
           <div className="flex items-center gap-space-xs flex-wrap">
             <div className="relative flex items-center">
               <MaterialIcon name="search" className="absolute left-space-md text-outline text-[18px]" />
-              <input className="w-72 lg:w-96 h-9 pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-outline shadow-sm focus:outline-none" placeholder="Search accounts (e.g. AC-10254), transaction IDs, or entities..." type="text" />
+              <input className="w-72 lg:w-96 h-9 pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-outline shadow-sm focus:outline-none" placeholder="Search accounts (e.g. AC-10254), transaction IDs, or entities..." type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => {
+                if (e.key !== "Enter") return
+                const match = visibleNodeIdx[0]?.n
+                if (match) { setSelected(match.id); setDrawerOpen(true) }
+              }} />
             </div>
             <button className="h-9 px-space-md bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-sm text-label-sm rounded-lg flex items-center gap-space-xs shadow-sm transition-colors cursor-pointer" type="button" onClick={() => notify({ title: "Advanced rules", body: "Graph rule builder is managed in Admin → Detection Rules.", tone: "primary" })}>
               <MaterialIcon name="tune" className="text-[18px] text-secondary" />
@@ -122,33 +159,29 @@ function NetworkExplorer() {
             <MaterialIcon name="calendar_today" className="text-[16px] text-primary" />
             <span className="text-on-surface-variant font-medium">Window:</span>
             <span className="font-semibold">Oct 1 - Oct 31, 2024</span>
-            <MaterialIcon name="expand_more" className="text-[14px] text-outline ml-1" />
           </div>
-          <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-error-container text-on-error-container font-label-sm text-label-sm whitespace-nowrap">
+          <button type="button" onClick={() => { setHighRiskOnly((v) => !v); fitScreen() }} className={`flex items-center gap-1.5 px-space-sm py-1 rounded font-label-sm text-label-sm whitespace-nowrap transition-colors cursor-pointer ${highRiskOnly ? "bg-error text-on-error" : "bg-error-container text-on-error-container hover:bg-error/70"}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-error"></span>
-            <span className="font-semibold">Risk:</span> High (≥80)
-            <MaterialIcon name="close" className="text-[14px] ml-0.5" />
-          </div>
+            <span className="font-semibold">Risk: {highRiskOnly ? "High (≥80)" : "All"}</span>
+          </button>
           <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap">
             <MaterialIcon name="hub" className="text-[16px] text-tertiary" />
             <span className="text-on-surface-variant">Typology:</span>
             <span className="font-semibold">Circular Flow, Fan-Out, Mule Net</span>
-            <MaterialIcon name="expand_more" className="text-[14px] text-outline ml-1" />
           </div>
-          <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap">
+          <button type="button" onClick={() => { setMinFlowOnly((v) => !v); fitScreen() }} className={`flex items-center gap-1.5 px-space-sm py-1 rounded font-label-sm text-label-sm whitespace-nowrap transition-colors cursor-pointer ${minFlowOnly ? "bg-primary text-on-primary" : "bg-surface-container-lowest shadow-sm text-on-surface hover:bg-surface-container"}`}>
             <MaterialIcon name="currency_rupee" className="text-[16px] text-secondary" />
             <span className="text-on-surface-variant">Min Flow:</span>
-            <span className="font-numeric-md text-numeric-md font-semibold">≥ ₹1,00,000</span>
-            <MaterialIcon name="expand_more" className="text-[14px] text-outline ml-1" />
-          </div>
+            <span className="font-numeric-md text-numeric-md font-semibold">{minFlowOnly ? "≥ ₹1,00,000 On" : "≥ ₹1,00,000 Off"}</span>
+          </button>
           <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap">
             <MaterialIcon name="payments" className="text-[16px] text-secondary" />
             <span className="text-on-surface-variant">Channels:</span>
-            <span className="px-1.5 py-0.5 rounded bg-surface-container-high font-label-caps text-[10px] text-on-secondary-container">UPI</span>
-            <span className="px-1.5 py-0.5 rounded bg-surface-container-high font-label-caps text-[10px] text-on-secondary-container">IMPS</span>
-            <span className="px-1.5 py-0.5 rounded bg-surface-container-high font-label-caps text-[10px] text-on-secondary-container">RTGS</span>
+            {["UPI", "IMPS", "RTGS"].map((c) => (
+              <button type="button" key={c} onClick={() => toggleChannel(c)} className={`px-1.5 py-0.5 rounded font-label-caps text-[10px] font-semibold transition-colors cursor-pointer ${channels.includes(c) ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-secondary-container hover:bg-surface-container"}`}>{c}</button>
+            ))}
           </div>
-          <button className="px-space-sm py-1 rounded text-primary hover:bg-surface-container-low font-label-sm text-label-sm flex items-center gap-1 cursor-pointer" type="button" onClick={() => { setSuspiciousOnly(true); fitScreen() }}>
+          <button className="px-space-sm py-1 rounded text-primary hover:bg-surface-container-low font-label-sm text-label-sm flex items-center gap-1 cursor-pointer" type="button" onClick={resetFilters}>
             <MaterialIcon name="restart_alt" className="text-[16px]" /> Reset Filters
           </button>
         </div>
@@ -209,7 +242,7 @@ function NetworkExplorer() {
             <span>Terminal Mule / Cashout</span>
           </div>
           <div className="h-3 w-px bg-surface-container-highest"></div>
-          <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{nodesData.length} Nodes · {edgesData.length} Flow Edges</span>
+          <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{visibleNodeIdx.length} Nodes · {visibleEdges.length} Flow Edges</span>
         </div>
 
         <div
@@ -258,7 +291,7 @@ function NetworkExplorer() {
                 <path d="M0,0 L0,6 L8,3 z" fill="#0037b0"></path>
               </marker>
             </defs>
-            {edgesData.slice(0, 40).map((e, i) => {
+            {visibleEdges.slice(0, 40).map((e, i) => {
               const fromNode = nodesData.find((n) => n.id === e.from) || nodeById(e.from)
               const toNode = nodesData.find((n) => n.id === e.to) || nodeById(e.to)
               if (!fromNode || !toNode) return null
@@ -283,7 +316,7 @@ function NetworkExplorer() {
             })}
 
             {/* NODES */}
-            {nodesData.slice(0, 8).map((n, idx) => {
+            {visibleNodeIdx.slice(0, 8).map(({ n, idx }) => {
               const p = nodePositions[idx] || { x: 400 + idx * 40, y: 340 }
               const isHub = idx === 0 || n.risk_score >= 60
               const bank = n.bank || n.institution || ""

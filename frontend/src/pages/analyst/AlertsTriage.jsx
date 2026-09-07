@@ -15,6 +15,7 @@ function AlertsTriage() {
   const [alerts, setAlerts] = useState([])
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState(null)
+  const [query, setQuery] = useState("")
 
   useEffect(() => {
     let alive = true
@@ -43,7 +44,14 @@ function AlertsTriage() {
     if (activeFilter === "Archived") return a.status === "archived"
     return true
   }
-  const filtered = alerts.filter(matchesFilter)
+  const filtered = alerts.filter(matchesFilter).filter((a) => {
+    if (!query.trim()) return true
+    const q = query.toLowerCase()
+    return [a.id, a.pattern, a.rule_id, a.severity, a.status]
+      .filter(Boolean)
+      .some((f) => String(f).toLowerCase().includes(q)) ||
+      (a.accounts || []).some((acc) => String(acc).toLowerCase().includes(q))
+  })
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
@@ -99,7 +107,7 @@ function AlertsTriage() {
         <div className="flex flex-wrap items-center gap-space-sm">
           <div className="relative flex items-center">
             <MaterialIcon name="search" className="absolute left-3 text-outline text-[18px]" />
-            <input className="w-64 h-9 pl-9 pr-3 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md shadow-sm outline-none placeholder:text-outline focus:bg-surface-container-low transition-colors" placeholder="Filter alerts, pattern, rule ID..." type="text" />
+            <input className="w-64 h-9 pl-9 pr-3 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md shadow-sm outline-none placeholder:text-outline focus:bg-surface-container-low transition-colors" placeholder="Filter alerts, pattern, rule ID..." type="text" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           <button className="flex items-center gap-space-xs h-9 px-space-md rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-all shadow-sm cursor-pointer" type="button" onClick={() => notify({ title: "Window fixed to demo range", body: "Oct 1 – Oct 31, 2024 · last 30 days of seeded telemetry.", tone: "primary" })}>
             <MaterialIcon name="calendar_today" className="text-[18px] text-on-surface-variant" />
