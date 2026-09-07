@@ -17,6 +17,8 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -44,7 +46,7 @@ app = FastAPI(title="FLOWSIGHT API", version="2.0.0", description=__doc__)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -1174,3 +1176,18 @@ def reports_generate(payload: dict, db: Session = Depends(get_db)) -> dict:
     audit(db, user="analyst", action="report.generate", resource=report["id"],
           detail={"investigation_id": inv.id})
     return report
+
+
+# ── static frontend (single-URL deployment) ────────────────────────────
+
+FRONTEND_DIST = BACKEND_ROOT.parent / "frontend" / "dist"
+DIST_EXISTS = (FRONTEND_DIST / "index.html").is_file()
+
+if DIST_EXISTS:
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def spa(full_path: str):
+        if DIST_EXISTS and (FRONTEND_DIST / full_path).is_file():
+            return FileResponse(FRONTEND_DIST / full_path)
+        return FileResponse(FRONTEND_DIST / "index.html")

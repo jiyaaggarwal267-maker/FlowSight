@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: flowsight
+    runtime: python
+    plan: free
+    buildCommand: |
+      cd frontend && npm install && npm run build && cd .. && pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    healthCheckPath: /api/health
