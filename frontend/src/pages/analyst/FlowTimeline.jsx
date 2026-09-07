@@ -15,7 +15,6 @@ function FlowTimeline() {
   const [loopOn, setLoopOn] = useState(true)
   const [inv, setInv] = useState(null)
   const [timeline, setTimeline] = useState(null)
-  const [accountsMeta, setAccountsMeta] = useState({})
 
   useEffect(() => {
     let alive = true
@@ -23,17 +22,6 @@ function FlowTimeline() {
       try {
         const d = await api.investigation(initialId)
         if (alive) setInv(d)
-        const accounts = d?.summary?.accounts || []
-        const meta = {}
-        await Promise.all(
-          accounts.map(async (id) => {
-            try {
-              const acct = await api.account(id)
-              meta[id] = acct
-            } catch {}
-          })
-        )
-        if (alive) setAccountsMeta(meta)
       } catch {}
       try {
         const t = await api.investigationTimeline(initialId)
@@ -46,10 +34,10 @@ function FlowTimeline() {
 
   const id = inv?.id || initialId
   const summary = inv?.summary || {}
-  const accounts = summary.accounts || []
+  const accounts = Array.isArray(inv?.accounts) ? inv.accounts : (summary.accounts || [])
   const pattern = summary.pattern || patternLabel(summary.pattern_types?.[0] || "unknown")
   const risk = inv?.risk_score ?? 0
-  const primaryAccount = summary.primary_account || accounts[0] || "—"
+  const primaryAccount = summary.primary_account || accounts[0]?.id || "—"
   const totalVolume = timeline?.total_volume || 0
   const days = timeline?.days || []
   const startDate = timeline?.start ? new Date(`${timeline.start}T00:00:00`) : null
@@ -178,11 +166,11 @@ function FlowTimeline() {
                   )
                 })}
                 {/* Real scoped account nodes */}
-                {nodeAccounts.map((acctId, idx) => {
+                {nodeAccounts.map((acct, idx) => {
+                  const acctId = typeof acct === "string" ? acct : acct.id
                   const p = nodePos[idx] || nodePos[nodePos.length - 1]
                   const isHub = idx === hubIndex
-                  const meta = accountsMeta[acctId]
-                  const name = meta?.entity || "Account"
+                  const name = typeof acct === "object" ? (acct.entity || acct.name || "Account") : "Account"
                   return (
                     <g key={acctId} className="cursor-pointer group">
                       {isHub && <circle cx={p.x} cy={p.y} r="44" fill="url(#crimson-glow)"></circle>}
@@ -216,7 +204,7 @@ function FlowTimeline() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-label-caps text-label-caps text-outline uppercase">Transactions</span>
-                  <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{timeline?.total_txns || summary.transactions?.length || 0}</span>
+                  <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{timeline?.total_txns || Array.isArray(inv?.transactions) ? inv.transactions.length : 0}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="font-label-caps text-label-caps text-outline uppercase">Total Velocity</span>

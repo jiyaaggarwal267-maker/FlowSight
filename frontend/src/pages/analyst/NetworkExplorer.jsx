@@ -2,10 +2,13 @@ import { useRef, useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
 import Skeleton, { useDemoLoad } from "../../components/Skeleton.jsx"
-import { bus, notify, formatINR } from "../../lib/runtime.js"
+import { bus, notify } from "../../lib/runtime.js"
 import { api } from "../../lib/api.js"
 
-const HUB = ""
+const MAX_VISIBLE_NODES = 12
+const MAX_VISIBLE_EDGES = 32
+const CX = 550
+const CY = 340
 
 function NetworkExplorer() {
   const [selected, setSelected] = useState("")
@@ -31,7 +34,7 @@ function NetworkExplorer() {
       if (!alive) return
       const items = d.items || []
       setAccounts(items)
-      if (items.length > 0 && !selected) {
+      if (items.length > 0) {
         const highRisk = items.find((a) => a.risk_score >= 60) || items[0]
         setSelected(highRisk.id)
       }
@@ -42,26 +45,15 @@ function NetworkExplorer() {
   useEffect(() => {
     let alive = true
     api.network({ suspicious_only: suspiciousOnly ? "true" : "false" })
-      .then((d) => alive && setNet(d))
+      .then((d) => { if (alive) { setNet(d); setView({ x: 0, y: 0, k: 1 }) } })
       .catch(() => {})
     return () => { alive = false }
   }, [suspiciousOnly])
 
   const nodesData = net?.nodes || []
   const edgesData = net?.edges || []
-  const nodePositions = [
-    { x: 190, y: 160 },
-    { x: 190, y: 480 },
-    { x: 470, y: 330 },
-    { x: 700, y: 160 },
-    { x: 700, y: 510 },
-    { x: 820, y: 340 },
-    { x: 330, y: 120 },
-    { x: 330, y: 520 },
-  ]
 
   const acct = accounts.find((a) => a.id === selected) || accounts.find((a) => a.risk_score >= 60) || {}
-  const nodeById = (id) => nodesData.find((n) => n.id === id) || accounts.find((a) => a.id === id) || null
 
   const openDrawer = (id) => {
     setSelected(id)
@@ -77,19 +69,55 @@ function NetworkExplorer() {
 
   const q = query.trim().toLowerCase()
   const matchesQuery = (n) => !q || [n.id, n.entity, n.bank, n.city].filter(Boolean).some((f) => String(f).toLowerCase().includes(q))
+  const riskTier = (n) => (n.risk_score >= 60 ? 0 : n.risk_score >= 40 ? 1 : 2)
 
-  const visibleNodeIdx = nodesData
-    .map((n, i) => ({ n, i }))
-    .filter(({ n }) => matchesQuery(n) && (!highRiskOnly || n.risk_score >= 80) && (channels.length === 0 || (n.channels || []).some((c) => channels.includes(c))))
-  const visibleNodeIds = new Set(visibleNodeIdx.map((e) => e.n.id))
-  const visibleEdges = edgesData.filter((e) => {
-    if (minFlowOnly && (e.amount || 0) < minFlow) return false
-    if (channels.length > 0 && !channels.includes(e.channel)) return false
-    const from = nodesData.find((n) => n.id === e.from) || nodeById(e.from)
-    const to = nodesData.find((n) => n.id === e.to) || nodeById(e.to)
-    if (!from || !to) return true
-    return visibleNodeIds.has(from.id) && visibleNodeIds.has(to.id)
-  })
+  const baseNodes = nodesData.filter((n) => matchesQuery(n) && (!highRiskOnly || n.risk_score >= 80))
+  const sorted = [...baseNodes].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
+  const nodes = sorted.slice(0, MAX_VISIBLE_NODES)
+  const nodeIds = new Set(nodes.map((n) => n.id))
+  const edgeList = edgesData
+    .filter((e) => {
+      if (minFlowOnly && (e.amount || 0) < minFlow) return false
+      if (channels.length > 0 && !channels.includes(e.channel)) return false
+      if (!nodeIds.has(e.from) || !nodeIds.has(e.to)) return false
+      return true
+    })
+    .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))
+    .slice(0, MAX_VISIBLE_EDGES)
+
+  function computePositions(list) {
+    if (layoutMode === "Hierarchical") {
+      const rows = [[], [], []]
+      list.forEach((n) => rows[riskTier(n)].push(n))
+      const yAt = [160, 330, 500]
+      const idxOf = {}
+      list.forEach((n, i) => { idxOf[n.id] = i })
+      const pos = new Array(list.length)
+      rows.forEach((row, band) => {
+        const spacing = 1100 / Math.max(row.length + 1, 2)
+        row.forEach((n, i) => {
+          pos[idxOf[n.id]] = { x: spacing * (i + 1), y: yAt[band] }
+        })
+      })
+      return pos
+    }
+    if (layoutMode === "Radial") {
+      const rings = [150, 245, 335]
+      const bandIdx = [0, 0, 0]
+      return list.map((_, i) => {
+        const b = riskTier(list[i])
+        const idx = bandIdx[b]++
+        const total = list.reduce((acc, m) => acc + (riskTier(m) === b ? 1 : 0), 0)
+        const ang = -Math.PI / 2 + (idx / Math.max(total, 1)) * Math.PI * 2
+        return { x: CX + rings[b] * Math.cos(ang), y: CY + rings[b] * 0.78 * Math.sin(ang) }
+      })
+    }
+    return list.map((_, i) => {
+      const ang = -Math.PI / 2 + (i / Math.max(list.length, 1)) * Math.PI * 2
+      return { x: CX + 300 * Math.cos(ang), y: CY + 230 * Math.sin(ang) }
+    })
+  }
+  const positions = computePositions(nodes)
 
   const toggleChannel = (c) =>
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -118,8 +146,7 @@ function NetworkExplorer() {
   const stopDrag = () => setDragging(null)
 
   const onWheel = (e) => {
-    const factor = e.deltaY < 0 ? 1.08 : 0.92
-    zoomBy(factor)
+    zoomBy(e.deltaY < 0 ? 1.08 : 0.92)
   }
 
   return (
@@ -140,7 +167,7 @@ function NetworkExplorer() {
               <MaterialIcon name="search" className="absolute left-space-md text-outline text-[18px]" />
               <input className="w-72 lg:w-96 h-9 pl-9 pr-8 bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-outline shadow-sm focus:outline-none" placeholder="Search accounts (e.g. AC-10254), transaction IDs, or entities..." type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => {
                 if (e.key !== "Enter") return
-                const match = visibleNodeIdx[0]?.n
+                const match = baseNodes[0] || nodes[0]
                 if (match) { setSelected(match.id); setDrawerOpen(true) }
               }} />
             </div>
@@ -211,38 +238,23 @@ function NetworkExplorer() {
             <input checked={suspiciousOnly} onChange={(e) => setSuspiciousOnly(e.target.checked)} className="rounded w-4 h-4 text-primary accent-primary bg-surface-container-lowest cursor-pointer" type="checkbox" />
             <span className="font-label-sm text-label-sm text-on-surface font-medium">Suspicious Paths Only</span>
           </label>
-          <div className="h-4 w-px bg-surface-container-highest"></div>
-          <button
-            className="flex items-center gap-1 px-space-sm py-1 rounded bg-secondary-container text-on-secondary-fixed font-label-sm text-label-sm hover:opacity-90 cursor-pointer"
-            type="button"
-            onClick={() =>
-              notify({
-                title: "Timeline scrub queued",
-                body: "Replaying transaction sequence for INV-001 across the scoped window.",
-                tone: "secondary",
-              })
-            }
-          >
-            <MaterialIcon name="history" className="text-[16px]" />
-            <span>Timeline Scrubbing</span>
-          </button>
         </div>
 
         <div className="absolute bottom-space-md left-space-md z-20 flex items-center gap-space-md bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-xs rounded-xl shadow-md text-on-surface-variant font-label-sm text-label-sm">
           <div className="flex items-center gap-space-xs">
             <span className="w-3 h-3 rounded-full bg-error"></span>
-            <span>High Risk (≥80)</span>
+            <span>High Risk (≥60)</span>
           </div>
           <div className="flex items-center gap-space-xs">
-            <span className="w-3 h-3 rounded-full bg-tertiary-container"></span>
-            <span>Intermediary Node</span>
+            <span className="w-3 h-3 rounded-full bg-primary"></span>
+            <span>Scoped Flow Node</span>
           </div>
           <div className="flex items-center gap-space-xs">
-            <span className="w-3 h-3 rounded-full bg-secondary-container"></span>
-            <span>Terminal Mule / Cashout</span>
+            <span className="w-3 h-3 rounded-full bg-outline"></span>
+            <span>Intermediary</span>
           </div>
           <div className="h-3 w-px bg-surface-container-highest"></div>
-          <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{visibleNodeIdx.length} Nodes · {visibleEdges.length} Flow Edges</span>
+          <span className="font-numeric-md text-numeric-md text-on-surface font-semibold">{nodes.length} Nodes · {edgeList.length} Flow Edges</span>
         </div>
 
         <div
@@ -267,92 +279,63 @@ function NetworkExplorer() {
                 <Skeleton className="h-24 w-40" />
               </div>
             </div>
+          ) : nodes.length === 0 ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-space-sm text-on-surface-variant">
+              <MaterialIcon name="hub" className="text-[48px] text-outline" />
+              <span className="font-headline-sm text-headline-sm">No matching nodes</span>
+              <span className="font-body-sm text-body-sm">Adjust the search or filters to reveal network topology.</span>
+            </div>
           ) : (
           <svg className="w-full h-full" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})`, transformOrigin: "center", transition: dragging ? "none" : "transform 130ms ease" }} viewBox="0 0 1100 680" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="edgeGradRed" x1="0%" x2="100%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor="#ba1a1a" stopOpacity="0.9"></stop>
-                <stop offset="100%" stopColor="#ba1a1a" stopOpacity="0.4"></stop>
-              </linearGradient>
-              <linearGradient id="edgeGradAmber" x1="0%" x2="100%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor="#0037b0" stopOpacity="0.8"></stop>
-                <stop offset="100%" stopColor="#36455b" stopOpacity="0.4"></stop>
-              </linearGradient>
               <filter height="140%" id="nxGlow" width="140%" x="-20%" y="-20%">
-                <feDropShadow dx="0" dy="2" floodColor="#ba1a1a" floodOpacity="0.3" stdDeviation="4"></feDropShadow>
-              </filter>
-              <filter height="140%" id="cardShadow" width="140%" x="-20%" y="-20%">
-                <feDropShadow dx="0" dy="3" floodColor="#000000" floodOpacity="0.08" stdDeviation="6"></feDropShadow>
+                <feDropShadow dx="0" dy="2" floodColor="#ba1a1a" floodOpacity="0.25" stdDeviation="4"></feDropShadow>
               </filter>
               <marker id="arrowRed" markerHeight="8" markerWidth="8" orient="auto" refX="6" refY="3">
                 <path d="M0,0 L0,6 L8,3 z" fill="#ba1a1a"></path>
               </marker>
               <marker id="arrowBlue" markerHeight="8" markerWidth="8" orient="auto" refX="6" refY="3">
-                <path d="M0,0 L0,6 L8,3 z" fill="#0037b0"></path>
+                <path d="M0,0 L0,6 L8,3 z" fill="#1d4ed8"></path>
               </marker>
             </defs>
-            {visibleEdges.slice(0, 40).map((e, i) => {
-              const fromNode = nodesData.find((n) => n.id === e.from) || nodeById(e.from)
-              const toNode = nodesData.find((n) => n.id === e.to) || nodeById(e.to)
-              if (!fromNode || !toNode) return null
-              const fi = nodesData.findIndex((n) => n.id === fromNode.id)
-              const ti = nodesData.findIndex((n) => n.id === toNode.id)
-              const a = nodePositions[fi] || nodePositions[fi % nodePositions.length]
-              const b = nodePositions[ti] || nodePositions[ti % nodePositions.length]
+
+            {edgeList.map((e, i) => {
+              const fi = nodes.findIndex((n) => n.id === e.from)
+              const ti = nodes.findIndex((n) => n.id === e.to)
+              const a = positions[fi]
+              const b = positions[ti]
               if (!a || !b) return null
-              const midX = (a.x + b.x) / 2 + (i % 2 === 0 ? 40 : -40)
-              const midY = (a.y + b.y) / 2 + (i % 2 === 0 ? -40 : 40)
-              const highVal = e.amount >= 500000
+              const highVal = (e.amount || 0) >= 500000
+              const midX = (a.x + b.x) / 2 + (i % 2 === 0 ? 30 : -30)
+              const midY = (a.y + b.y) / 2 + (i % 2 === 0 ? -36 : 36)
               return (
-                <g key={`${e.id || e.txn_id || i}`}>
-                  <path d={`M ${a.x} ${a.y} Q ${midX} ${midY} ${b.x} ${b.y}`} fill="none" markerEnd={highVal ? "url(#arrowRed)" : "url(#arrowBlue)"} stroke={highVal ? "#ba1a1a" : "#0037b0"} strokeDasharray={highVal ? "6,4" : "4,4"} strokeWidth={highVal ? 2.5 : 1.6}></path>
-                  <g transform={`translate(${midX}, ${midY})`}>
-                    <rect className="shadow-sm" fill="#ffffff" height="24" rx="4" width="120" x="-4" y="-12"></rect>
-                    <text fill={highVal ? "#ba1a1a" : "#0037b0"} fontFamily="Inter" fontSize="10" fontWeight="600" x="6" y="2">{formatINR(e.amount)} · {e.channel || "—"}</text>
-                    <text fill="#747686" fontFamily="Inter" fontSize="8" x="6" y="12">{e.txn_id || e.id || "TXN"}</text>
-                  </g>
+                <g key={e.id || e.txn_id || i} opacity={hovered && hovered !== e.from && hovered !== e.to ? 0.15 : 1} style={{ transition: "opacity 200ms" }}>
+                  <path d={`M ${a.x} ${a.y} Q ${midX} ${midY} ${b.x} ${b.y}`} fill="none" markerEnd={highVal ? "url(#arrowRed)" : "url(#arrowBlue)"} stroke={highVal ? "#ba1a1a" : "#1d4ed8"} strokeDasharray={highVal ? "6,4" : "3,4"} strokeLinecap="round" strokeOpacity={highVal ? 0.85 : 0.45} strokeWidth={highVal ? 2.5 : 1.6}></path>
                 </g>
               )
             })}
 
-            {/* NODES */}
-            {visibleNodeIdx.slice(0, 8).map(({ n, idx }) => {
-              const p = nodePositions[idx] || { x: 400 + idx * 40, y: 340 }
+            {nodes.map((n, idx) => {
+              const p = positions[idx] || { x: CX, y: CY }
               const isHub = idx === 0 || n.risk_score >= 60
-              const bank = n.bank || n.institution || ""
-              const entityShort = (n.entity || "").toUpperCase().slice(0, 16)
+              const fill = isHub ? "#ba1a1a" : "#1d4ed8"
+              const label = n.risk_score >= 60 ? `${n.id} (HUB)` : n.id
+              const note = `${n.risk_score || "—"} RISK · ${(n.entity || "").toUpperCase().slice(0, 18)}`
               return (
-                <g key={n.id} className="cursor-pointer group" onClick={() => openDrawer(n.id)} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered(null)} style={{ opacity: hovered && hovered !== n.id ? 0.3 : 1, transition: "opacity 200ms" }} transform={`translate(${p.x}, ${p.y})`}>
-                  {isHub ? (
-                    <>
-                      <circle className="animate-ping" cx="0" cy="0" fill="#ffdad6" opacity="0.4" r="54"></circle>
-                      <circle cx="0" cy="0" fill="#ba1a1a" filter="url(#nxGlow)" r="46"></circle>
-                      <circle cx="0" cy="0" fill="#ffffff" r="41"></circle>
-                      <text fill="#ba1a1a" fontFamily="Inter" fontSize="13" fontWeight="700" textAnchor="middle" x="0" y="-12">{n.id}</text>
-                      <text fill="#191c1e" fontFamily="Inter" fontSize="9" fontWeight="600" textAnchor="middle" x="0" y="3">{entityShort}</text>
-                      <rect fill="#ba1a1a" height="15" rx="3" width="52" x="-26" y="12"></rect>
-                      <text fill="#ffffff" fontFamily="Inter" fontSize="9" fontWeight="700" textAnchor="middle" x="0" y="23">SCORE {n.risk_score}</text>
-                      <rect fill="#191c1e" height="22" rx="4" width="160" x="-80" y="52"></rect>
-                      <text fill="#ffffff" fontFamily="Inter" fontSize="10" fontWeight="500" textAnchor="middle" x="0" y="66">PRIMARY SUSPECT HUB</text>
-                    </>
-                  ) : (
-                    <>
-                      <rect fill="#ffffff" filter="url(#cardShadow)" height="54" rx="8" width="150" x="-24" y="-24"></rect>
-                      <rect fill={n.risk_score >= 40 ? "#ba1a1a" : "#565e74"} height="54" rx="2" width="6" x="-24" y="-24"></rect>
-                      <text fill="#191c1e" fontFamily="Inter" fontSize="12" fontWeight="600" x="-10" y="-5">{n.id}</text>
-                      <text fill="#565e74" fontFamily="Inter" fontSize="10" x="-10" y="10">{bank || "—"} · {n.city || ""}</text>
-                      <text fill={n.risk_score >= 40 ? "#ba1a1a" : "#747686"} fontFamily="Inter" fontSize="9" fontWeight="600" x="-10" y="22">Risk Score: {n.risk_score || 0}/100</text>
-                      <circle cx="106" cy="3" fill={n.risk_score >= 40 ? "#ffdad6" : "#eceef0"} r="14"></circle>
-                      <text fill={n.risk_score >= 40 ? "#ba1a1a" : "#565e74"} fontFamily="Inter" fontSize="9" fontWeight="700" x="100" y="7">{n.risk_score >= 40 ? "MULE" : "SRC"}</text>
-                    </>
-                  )}
+                <g key={n.id} className="cursor-pointer transition-transform hover:scale-105" onClick={() => openDrawer(n.id)} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered(null)} style={{ opacity: hovered && hovered !== n.id ? 0.3 : 1, transition: "opacity 200ms, transform 150ms" }} transform={`translate(${p.x}, ${p.y})`}>
+                  {isHub && <circle className="animate-pulse" fill="#ffdad6" opacity="0.5" r="40"></circle>}
+                  <circle fill="#ffffff" filter="url(#nxGlow)" r={isHub ? 30 : 26}></circle>
+                  <circle fill="#f2f4f6" r={isHub ? 25 : 22}></circle>
+                  <circle fill={fill} r={isHub ? 10 : 6}></circle>
+                  <text className="font-semibold text-[11px]" fill="#191c1e" textAnchor="middle" y={isHub ? 48 : 42}>{label}</text>
+                  <text className="text-[9px]" fill="#565e74" textAnchor="middle" y={isHub ? 61 : 54}>{note}</text>
                 </g>
               )
             })}
           </svg>
           )}
           <div className="absolute right-space-md bottom-space-md z-10 px-2 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur font-label-caps text-label-caps text-on-surface-variant shadow-sm pointer-events-none">
-            {Math.round(view.k * 100)}% · drag to pan · scroll to zoom
+            {Math.round(view.k * 100)}% · {layoutMode} · drag to pan · scroll to zoom
           </div>
         </div>
 
