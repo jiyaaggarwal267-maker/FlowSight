@@ -422,6 +422,7 @@ function AdminRules() {
   const [activeCat, setActiveCat] = useState("all")
   const [staged, setStaged] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
+  const [staging, setStaging] = useState(false)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
 
@@ -612,11 +613,19 @@ function AdminRules() {
       )}
       {builderOpen && (
         <RuleBuilder
-          onClose={() => setBuilderOpen(false)}
+          onClose={() => !staging && setBuilderOpen(false)}
           onCreated={(name, cat, count) => {
             setBuilderOpen(false)
-            setStaged(true)
-            showToast(`${name} staged · ${cat} · ${count} conditions · awaiting L2 sign-off`)
+            setStaging(true)
+            api
+              .createRule({ name, pattern: cat, sensitivity: "medium" })
+              .then((created) => {
+                setRules((prev) => [created, ...prev])
+                setStaged(true)
+                showToast(`${created.id} · ${name} created (${cat}) · awaiting L2 sign-off`)
+              })
+              .catch((err) => showToast(`Stage failed: ${err.message}`))
+              .finally(() => setStaging(false))
           }}
         />
       )}

@@ -10,6 +10,8 @@ function FlowTimeline() {
   const initialId = paramId || location.state?.id || "INV-001"
 
   const [held, setHeld] = useState(false)
+  const [holdBusy, setHoldBusy] = useState(false)
+  const [holdMsg, setHoldMsg] = useState("")
   const [loopOn, setLoopOn] = useState(true)
   const [inv, setInv] = useState(null)
   const [timeline, setTimeline] = useState(null)
@@ -366,9 +368,18 @@ function FlowTimeline() {
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Primary suspect {primaryAccount} scoped in {id} ({patternLabel(pattern)}). Consider a provisional hold pending analyst review.
               </span>
-              <button className={`mt-space-2xs w-full py-1.5 rounded font-label-sm text-label-sm font-semibold text-center transition-colors cursor-pointer ${held ? "bg-emerald-600 text-white" : "bg-error text-on-error hover:opacity-90"}`} type="button" onClick={() => setHeld(true)}>
-                {held ? `Provisional Hold Placed · ${primaryAccount}` : `Issue Provisional Hold (${primaryAccount})`}
+              <button className={`mt-space-2xs w-full py-1.5 rounded font-label-sm text-label-sm font-semibold text-center transition-colors cursor-pointer disabled:opacity-60 ${held ? "bg-emerald-600 text-white" : "bg-error text-on-error hover:opacity-90"}`} type="button" disabled={holdBusy} onClick={() => {
+                if (held || holdBusy) return
+                setHoldBusy(true)
+                setHoldMsg("")
+                api.updateAccount(primaryAccount, { frozen: true, freeze_reason: "Provisional hold placed during timeline replay" })
+                  .then(() => { setHeld(true); setHoldMsg(`Provisional hold placed · ${primaryAccount}`) })
+                  .catch((err) => setHoldMsg(`Hold failed: ${err.message}`))
+                  .finally(() => setHoldBusy(false))
+              }}>
+                {holdBusy ? "Placing hold…" : held ? `Provisional Hold Placed · ${primaryAccount}` : `Issue Provisional Hold (${primaryAccount})`}
               </button>
+              {holdMsg && <span className="mt-1 text-body-xs text-body-xs text-on-surface-variant">{holdMsg}</span>}
             </div>
           </div>
         </div>

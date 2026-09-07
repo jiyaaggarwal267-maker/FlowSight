@@ -8,6 +8,8 @@ import { api, patternLabel } from "../../lib/api.js"
 function AnalystOverview() {
   const [selectedNode, setSelectedNode] = useState(null)
   const [frozen, setFrozen] = useState(false)
+  const [freezeBusy, setFreezeBusy] = useState(false)
+  const [freezeMsg, setFreezeMsg] = useState("")
   const [overview, setOverview] = useState(null)
   const [accounts, setAccounts] = useState([])
 
@@ -27,6 +29,20 @@ function AnalystOverview() {
   }, [])
 
   const nodeData = accounts.find((a) => a.id === selectedNode) || accounts.find((a) => a.risk_score >= 60) || accounts[0] || {}
+
+  const freezeNode = () => {
+    if (frozen || freezeBusy || !nodeData.id) return
+    setFreezeBusy(true)
+    setFreezeMsg("")
+    api
+      .updateAccount(nodeData.id, { frozen: true, freeze_reason: "Frozen from overview graph sandbox" })
+      .then(() => {
+        setFrozen(true)
+        setFreezeMsg(`Node ${nodeData.id} frozen`)
+      })
+      .catch((err) => setFreezeMsg(`Freeze failed: ${err.message}`))
+      .finally(() => setFreezeBusy(false))
+  }
 
   const graphNodes = accounts.slice(0, 5)
   const graphPos = [
@@ -286,17 +302,19 @@ function AnalystOverview() {
                 <span className="text-on-surface-variant font-label-caps text-label-caps">Selected Node:</span>
                 <span className="font-numeric-md font-semibold text-on-surface">{nodeData.entity || '—'}</span>
                 <span className="px-1.5 py-0.5 rounded text-error bg-error-container/60 font-label-caps text-[10px] font-bold">Risk {nodeData.risk_score || '—'}</span>
-                {frozen && <span className="px-1.5 py-0.5 rounded text-on-primary bg-primary font-label-caps text-[10px] font-bold animate-pulse">Node Frozen (Sandbox)</span>}
+                {frozen && <span className="px-1.5 py-0.5 rounded text-on-primary bg-primary font-label-caps text-[10px] font-bold animate-pulse">Node Frozen</span>}
               </div>
               <div className="flex items-center gap-space-xs">
                 <button
-                  className="text-primary hover:text-primary-container font-label-sm text-label-sm font-medium flex items-center gap-1 cursor-pointer"
+                  className="text-primary hover:text-primary-container font-label-sm text-label-sm font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   type="button"
-                  onClick={() => setFrozen(true)}
+                  onClick={freezeNode}
+                  disabled={freezeBusy}
                 >
-                  <MaterialIcon name="lock" className="text-[16px]" />
-                  Freeze Node
+                  <MaterialIcon name={freezeBusy ? "progress_activity" : "lock"} className="text-[16px]" />
+                  {freezeBusy ? "Freezing…" : frozen ? "Frozen" : "Freeze Node"}
                 </button>
+                {freezeMsg && <span className="font-label-sm text-label-sm text-on-surface-variant">{freezeMsg}</span>}
                 <span className="text-outline-variant">|</span>
                 {overview?.recent_investigations?.[0] && (
                   <Link className="text-on-surface hover:text-primary font-label-sm text-label-sm font-medium" to={`/analyst/investigations/${overview.recent_investigations[0].id}`}>Inspect Ledger</Link>

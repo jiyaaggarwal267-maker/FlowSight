@@ -12,6 +12,8 @@ function EntityProfile() {
   const [query, setQuery] = useState("")
   const [freezeOpen, setFreezeOpen] = useState(false)
   const [freezeSent, setFreezeSent] = useState(false)
+  const [freezeBusy, setFreezeBusy] = useState(false)
+  const [freezeMsg, setFreezeMsg] = useState("")
   const demoLoad = useDemoLoad(500)
 
   useEffect(() => {
@@ -36,7 +38,16 @@ function EntityProfile() {
 
   const confirmFreeze = () => {
     setFreezeOpen(false)
-    setFreezeSent(true)
+    setFreezeBusy(true)
+    setFreezeMsg("")
+    api
+      .updateAccount(id, { frozen: true, freeze_reason: "Frozen by analyst SIU review" })
+      .then(() => {
+        setFreezeSent(true)
+        setFreezeMsg("Account freeze submitted and persisted to backend.")
+      })
+      .catch((err) => setFreezeMsg(`Freeze failed: ${err.message}`))
+      .finally(() => setFreezeBusy(false))
   }
 
   const fmt = (v) => {
@@ -97,10 +108,11 @@ function EntityProfile() {
             <MaterialIcon name="hub" className="text-[18px] text-primary" />
             <span>View in Network Graph</span>
           </Link>
-          <button className={`inline-flex items-center gap-space-xs px-space-md h-9 rounded shadow-sm font-label-sm font-semibold transition-colors cursor-pointer ${freezeSent ? "bg-surface-container-high text-on-surface-variant" : "bg-error text-on-error hover:bg-red-700"}`} type="button" onClick={() => !freezeSent && setFreezeOpen(true)}>
-            <MaterialIcon name={freezeSent ? "verified" : "lock_clock"} className="text-[18px]" />
-            <span>{freezeSent ? "Freeze Submitted" : "Freeze Account"}</span>
+          <button className={`inline-flex items-center gap-space-xs px-space-md h-9 rounded shadow-sm font-label-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 ${freezeSent ? "bg-surface-container-high text-on-surface-variant" : "bg-error text-on-error hover:bg-red-700"}`} type="button" onClick={() => !freezeSent && !freezeBusy && setFreezeOpen(true)} disabled={freezeBusy}>
+            <MaterialIcon name={freezeSent ? "verified" : freezeBusy ? "progress_activity" : "lock_clock"} className="text-[18px]" />
+            <span>{freezeBusy ? "Freezing…" : freezeSent ? "Freeze Submitted" : "Freeze Account"}</span>
           </button>
+          {freezeMsg && <span className="w-full order-last text-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><MaterialIcon name={freezeMsg.includes("failed") ? "error" : "task_alt"} className="text-[14px] text-primary" />{freezeMsg}</span>}
         </div>
       </div>
 
@@ -281,7 +293,7 @@ function EntityProfile() {
             </p>
             <div className="flex justify-end gap-space-xs">
               <button className="px-space-md py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold transition-colors cursor-pointer" type="button" onClick={() => setFreezeOpen(false)}>Cancel</button>
-              <button className="px-space-md py-1.5 rounded bg-error text-on-error font-label-sm text-label-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer" type="button" onClick={confirmFreeze}>Confirm Freeze</button>
+              <button className="px-space-md py-1.5 rounded bg-error text-on-error font-label-sm text-label-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer" type="button" onClick={confirmFreeze}>{freezeBusy ? "Freezing…" : "Confirm Freeze"}</button>
             </div>
           </div>
         </div>

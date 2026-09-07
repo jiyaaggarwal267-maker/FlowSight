@@ -20,6 +20,7 @@ function AiInvestigator() {
   const [result, setResult] = useState(null)
   const [showGuide, setShowGuide] = useState(true)
   const [toast, setToast] = useState({ msg: "", visible: false })
+  const [appendBusy, setAppendBusy] = useState(false)
   const toastTimer = useRef(null)
   const inputRef = useRef(null)
 
@@ -47,6 +48,24 @@ function AiInvestigator() {
       showToast(`Error: ${err.message}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const appendFindings = async () => {
+    if (!result || appendBusy) return
+    setAppendBusy(true)
+    try {
+      await api.appendFinding(investigationId, {
+        finding: result.finding || query,
+        evidence: Array.isArray(result.evidence) ? result.evidence.join(", ") : String(result.evidence || ""),
+        patterns: Array.isArray(result.patterns) ? result.patterns : [],
+        risk_score: result.risk_score,
+      })
+      showToast(`Findings appended to ${investigationId} dossier.`)
+    } catch (err) {
+      showToast(`Append failed: ${err.message}`)
+    } finally {
+      setAppendBusy(false)
     }
   }
 
@@ -213,9 +232,9 @@ function AiInvestigator() {
 
               <div className="flex flex-wrap items-center gap-space-sm pt-space-md">
                 {investigationId && (
-                  <button className="flex items-center gap-space-xs px-space-base py-2.5 rounded bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container shadow-sm transition-all active:scale-[0.98] cursor-pointer" type="button" onClick={() => showToast("Findings appended to Investigation Dossier.")}>
+                  <button className="flex items-center gap-space-xs px-space-base py-2.5 rounded bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60" type="button" onClick={appendFindings} disabled={appendBusy}>
                     <MaterialIcon name="post_add" className="text-[18px]" />
-                    <span>Append Findings to Dossier</span>
+                    <span>{appendBusy ? "Appending…" : "Append Findings to Dossier"}</span>
                   </button>
                 )}
                 {investigationId && (
