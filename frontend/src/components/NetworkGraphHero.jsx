@@ -2,6 +2,15 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import MaterialIcon from "./MaterialIcon.jsx"
 
+const MINI_NODES = [
+  { dot: "bg-emerald-400", title: "SRC-301", sub: "₹4,20,000 · UPI", static: "left-[80px] top-[95px]" },
+  { dot: "bg-emerald-400", title: "SRC-884", sub: "₹8,10,450 · IMPS", static: "left-[80px] top-[235px]" },
+  { dot: "bg-blue-400", title: "AC-1099 (Kotak)", sub: "₹3,50,000 · Fan-Out", static: "left-[490px] top-[275px]" },
+  { dot: "bg-red-500", title: "SYNTHETIC CORP", sub: "Circular Loop Sink", static: "left-[670px] top-[195px]", red: true },
+  { icon: "currency_exchange", title: "CRYPTO ON-RAMP", sub: "USDT Gateway Liquidity", static: "right-[30px] top-[115px]" },
+  { icon: "apartment", title: "OFFSHORE SINK", sub: "Tax Haven Layer 4", static: "right-[30px] top-[290px]", red: true },
+]
+
 function NetworkGraphHero({ tall = false }) {
   const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState("all")
@@ -87,20 +96,29 @@ function NetworkGraphHero({ tall = false }) {
           <path d="M 700 220 Q 770 290 840 310" fill="none" markerEnd="url(#arrow-red-main-hero)" stroke="#ef4444" strokeDasharray="3,3" strokeWidth="2"></path>
         </svg>
 
-        <div className="hidden md:block absolute left-[80px] top-[95px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="font-mono text-xs text-white font-semibold">SRC-301</span>
+        {MINI_NODES.map((n) => (
+          <div key={n.title} className={`hidden md:block absolute ${n.static} p-2 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors ${
+            n.red ? "bg-red-950/80 border-red-500 shadow-lg" : n.icon ? (n.title === "OFFSHORE SINK" ? "bg-red-950/90 border-red-700" : "bg-slate-900 border-slate-700") : "bg-slate-800 border-slate-700"
+          }`}>
+            {n.icon ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <MaterialIcon name={n.icon} className={`text-xs ${n.red ? "text-red-400" : "text-slate-400"}`} />
+                  <span className={`font-mono text-xs font-semibold ${n.red ? "text-red-200 font-bold" : "text-slate-200 font-semibold"}`}>{n.title}</span>
+                </div>
+                <p className={`text-[10px] font-mono mt-0.5 ${n.red ? "text-red-400" : "text-slate-500"}`}>{n.sub}</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${n.dot}`}></span>
+                  <span className="font-mono text-xs text-white font-semibold">{n.title}</span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{n.sub}</p>
+              </>
+            )}
           </div>
-          <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹4,20,000 · UPI</p>
-        </div>
-        <div className="hidden md:block absolute left-[80px] top-[235px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow cursor-pointer hover:border-slate-500 transition-colors">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="font-mono text-xs text-white font-semibold">SRC-884</span>
-          </div>
-          <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹8,10,450 · IMPS</p>
-        </div>
+        ))}
         <div className="hidden md:block absolute left-[285px] top-[165px] z-20 cursor-pointer" onClick={() => setLoopFocus((v) => !v)}>
           <div className={`absolute -inset-2.5 rounded-xl bg-red-600/30 ${loopFocus ? "" : "animate-pulse"}`}></div>
           <div className="relative px-3.5 py-2.5 bg-red-950 border-2 border-red-500 rounded-xl shadow-2xl text-left ring-2 ring-red-400/40">
@@ -151,37 +169,8 @@ function NetworkGraphHero({ tall = false }) {
           </div>
         </div>
 
-        <div className="hidden md:block absolute left-[490px] top-[275px] p-2 bg-slate-800 border border-slate-700 rounded-lg shadow">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            <span className="font-mono text-xs text-white font-semibold">AC-1099 (Kotak)</span>
-          </div>
-          <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹3,50,000 · Fan-Out</p>
-        </div>
-        <div className="hidden md:block absolute left-[670px] top-[195px] p-2 bg-red-950/80 border border-red-500 rounded-lg shadow-lg">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span>
-            <span className="font-mono text-xs text-red-200 font-bold">SYNTHETIC CORP</span>
-          </div>
-          <p className="text-[10px] text-red-300 font-mono mt-0.5">Circular Loop Sink</p>
-        </div>
-        <div className="hidden md:block absolute right-[30px] top-[115px] p-2 bg-slate-900 border border-slate-700 rounded-lg shadow">
-          <div className="flex items-center gap-1.5">
-            <MaterialIcon name="currency_exchange" className="text-xs text-slate-400" />
-            <span className="font-mono text-xs text-slate-200 font-semibold">CRYPTO ON-RAMP</span>
-          </div>
-          <p className="text-[10px] text-slate-500 font-mono mt-0.5">USDT Gateway Liquidity</p>
-        </div>
-        <div className="hidden md:block absolute right-[30px] top-[290px] p-2 bg-red-950/90 border border-red-700 rounded-lg shadow">
-          <div className="flex items-center gap-1.5">
-            <MaterialIcon name="apartment" className="text-xs text-red-400" />
-            <span className="font-mono text-xs text-red-200 font-bold">OFFSHORE SINK</span>
-          </div>
-          <p className="text-[10px] text-red-400 font-mono mt-0.5">Tax Haven Layer 4</p>
-        </div>
-
-        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between bg-slate-950/80 px-3 py-2 rounded-lg border border-slate-800 text-xs font-mono">
-          <div className="flex items-center gap-4 text-slate-400">
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-y-1 bg-slate-950/80 px-3 py-2 rounded-lg border border-slate-800 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
               <span className="text-slate-300">Critical Risk (&gt;90)</span>
@@ -198,6 +187,72 @@ function NetworkGraphHero({ tall = false }) {
           <div className="text-slate-400">
             Graph Density: <strong className="text-white">14 Nodes</strong> · Telemetry: <span className="text-emerald-400">14.2ms/hop</span>
           </div>
+        </div>
+      </div>
+
+      <div className="md:hidden flex flex-col gap-3">
+        <div className="rounded-xl border border-red-500/80 bg-slate-950/95 p-3.5 text-white">
+          <div className="flex items-start justify-between pb-2 border-b border-slate-800">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs font-bold text-red-400">SUSPECT NODE: AC-9214</span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-mono">HDFC Bank · Fort Branch</p>
+            </div>
+            <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 border border-red-500/40 rounded text-[10px] font-mono font-bold">CRITICAL</span>
+          </div>
+          <div className="py-2.5 space-y-1.5 font-mono text-[11px]">
+            <div className="flex justify-between gap-2">
+              <span className="text-slate-400">Risk Score:</span>
+              <span className="text-red-400 font-bold text-right">94/100 (Structuring)</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-slate-400">Total Inflow:</span>
+              <span className="text-white font-semibold text-right">₹18.70 Lakhs</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-slate-400">Layering Cadence:</span>
+              <span className="text-amber-400 text-right">Fan-Out within 180s</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-slate-400">Connected Clusters:</span>
+              <span className="text-blue-300 text-right">14 Layered / 3 Banks</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-800 flex flex-col gap-2">
+            <Link to="/analyst/network-explorer" className="flex-1 py-1.5 bg-primary text-white rounded text-[11px] font-medium hover:bg-blue-600 transition-colors text-center cursor-pointer">
+              Inspect in Explorer
+            </Link>
+            <button className="py-1.5 px-2.5 bg-slate-800 text-slate-200 border border-slate-700 rounded text-[11px] font-medium hover:bg-slate-700 transition-colors cursor-pointer" type="button" onClick={() => navigate("/analyst/reports")}>
+              Generate FIU Report
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {MINI_NODES.map((n) => (
+            <div key={n.title} className={`rounded-lg p-2 border shadow-sm ${
+              n.red ? "bg-red-950/80 border-red-500" : n.icon ? (n.title === "OFFSHORE SINK" ? "bg-red-950/90 border-red-700" : "bg-slate-900 border-slate-700") : "bg-slate-800 border-slate-700"
+            }`}>
+              {n.icon ? (
+                <>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MaterialIcon name={n.icon} className={`text-xs shrink-0 ${n.red ? "text-red-400" : "text-slate-400"}`} />
+                    <span className={`font-mono text-[11px] truncate ${n.red ? "text-red-200 font-bold" : "text-slate-200 font-semibold"}`}>{n.title}</span>
+                  </div>
+                  <p className={`text-[10px] font-mono mt-0.5 truncate ${n.red ? "text-red-400" : "text-slate-500"}`}>{n.sub}</p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${n.dot}`}></span>
+                    <span className="font-mono text-[11px] truncate text-white font-semibold">{n.title}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{n.sub}</p>
+                </>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </section>
