@@ -236,6 +236,7 @@ This is a **prototype/hackathon build** — honesty over polish:
 - **Deterministic AI, not generative** — the AI Investigator answers from rule-based templates over the dossier; it cites real evidence and never hallucinates, but it is not an LLM and does not produce open-ended analysis.
 - **In-memory detection** — detection loads the full ledger into NetworkX in memory; fine for the sample corpus, but it won't scale to millions of rows without a distributed engine.
 - **Illustrative marketing metrics** on the landing page (transaction counts scanned, precision %, latency) are static mockups, not live instrumentation.
+- **Desktop-first UI** — mobile-responsive, but the graph-heavy views (Network Explorer, Flow Timeline) are designed for and best experienced on desktop.
 
 ## Credits
 
