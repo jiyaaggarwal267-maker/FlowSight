@@ -49,13 +49,19 @@ FLOWSIGHT detects those patterns directly on the transaction graph: synthetic da
 - **Auto-generated SAR-style reports** — executive summary, network overview, key evidence, transaction paths, risk assessment, and recommended action, ready for statutory filing workflows.
 - **Admin Console** — Detection Rules, Users & Roles, Audit Logs (every state change is audited), and System Health.
 - **Investigation workflow** — dossier-driven triage with status, assignment, appended findings, and risk breakdown per pattern.
+- **Voice & accessibility (optional, ElevenLabs)** — text-to-speech in up to 11 languages (English, Hindi, Haryanvi, Tamil, Telugu, Marathi, Bengali, Gujarati, Kannada, Malayalam, Punjabi):
+  - **Read Aloud** on the investigation dossier — reads the case summary aloud with a language selector.
+  - **AI Investigator narration** — a speaker button reads the Finding + Evidence aloud in the selected language; asking a new question stops playback.
+  - **Flow Timeline voice narration** — an off-by-default toggle narrates each day's network formation (new accounts joining, transactions, volume moved) in sync with the replay; auto-advance pauses until each narration finishes.
+  - Voice needs an **optional `ELEVENLABS_API_KEY`**; without one the buttons show a friendly "speech unavailable" status rather than breaking. Non-English text is translated keylessly on the server (Google Translate with MyMemory fallback, chunked to fit free-tier limits) then spoken with a multilingual ElevenLabs voice.
 
 ## Signature screens
 
 - **Landing Page** — a forensic "scanner terminal" hero, live telemetry counters, an animated incident feed, and an interactive network-graph preview. Includes the quick one-click demo sign-in.
 - **Network Explorer** (`/analyst/network-explorer`) — interactive entity/transaction graph with risk-coded nodes, click-through to entity profiles, and a suspicious-only filter.
-- **Investigation View** (`/analyst/investigations/:id`) — the investigation dossier: summary, accounts in scope, involved transactions, evidence list with transaction IDs, risk breakdown by pattern, findings, and AI Investigator / report actions.
-- **Flow Timeline** (`/analyst/flow-timeline`) — cumulative volume/txns/active-accounts replay over the network's active window, with daily event transactions.
+- **Investigation View** (`/analyst/investigations/:id`) — the investigation dossier: summary, accounts in scope, involved transactions, evidence list with transaction IDs, risk breakdown by pattern, findings, AI Investigator / report actions, and a **🔊 Read Aloud** button with a language selector.
+- **Flow Timeline** (`/analyst/flow-timeline`) — cumulative volume/txns/active-accounts replay over the network's active window, with daily event transactions and an optional **🔊 Voice Narration** toggle that narrates each day in sync with playback.
+- **AI Investigator** (`/analyst/investigator`) — evidence-grounded forensic Q&A; the Forensic Synthesis Report (Finding + Cited Evidence) has a **Read Aloud** speaker button plus language selection.
 
 ## Tech stack
 
@@ -75,9 +81,10 @@ FLOWSIGHT detects those patterns directly on the transaction graph: synthetic da
 - SQLAlchemy 2.0 + SQLite (WAL mode)
 - NetworkX 3.6 (graph + detection)
 - Pandas 3.0 (behavioral deviation / baseline stats)
+- ElevenLabs `2.68.0` (optional TTS voice) + `deep-translator` `1.11.4` (keyless translation for non-English voice)
 - Tested with Python 3.14
 
-**No LLM/API keys are used.** The "AI Investigator" is a deterministic, rule-based forensic Q&A layer over the persisted dossier — so every claim cites real records instead of being generated.
+**No LLM is used.** The "AI Investigator" is a deterministic, rule-based forensic Q&A layer over the persisted dossier — so every claim cites real records instead of being generated. Voice features are the only opt-in external dependency: they use an optional ElevenLabs API key and free keyless translators; everything else is fully self-contained.
 
 ## Architecture
 
@@ -92,6 +99,7 @@ detection engine (detection.py + app/engine.py)
 FastAPI (app/main.py) ── SQLite via SQLAlchemy (flowsight.db)
    /api/overview · /api/network · /api/alerts · /api/accounts
    /api/investigations · /api/reports · /api/admin/* · /api/ai-investigator
+   /api/tts (optional ElevenLabs voice)
         │
         ▼
 React frontend (Vite)
@@ -113,7 +121,7 @@ Findings are combined into clusters with risk-weighted scores, ranked, and store
 
 ## Local setup
 
-Requirements: **Python 3.10+** and **Node 18+**.
+Requirements: **Python 3.10+** and **Node 20.19+** (Vite 7 requires Node ≥20.19).
 
 ### 1. Backend (FastAPI)
 
@@ -125,6 +133,9 @@ pip install -r requirements.txt
 
 # Optional — regenerate the synthetic dataset from scratch (data/ is already committed):
 python generate_data.py
+
+# Optional — enable Read Aloud / voice narration (set any ElevenLabs API key):
+export ELEVENLABS_API_KEY=sk_xxxxxxxxxxxxxxxxxxxxxxxx
 
 # Start the API (auto-creates and seeds backend/flowsight.db on first boot):
 uvicorn app.main:app --reload
@@ -165,9 +176,9 @@ There is **no real authentication system**. The login screen offers two one-clic
 | Where | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- | --- |
 | Frontend (`frontend/.env`) | `VITE_API_URL` | No | `""` (same-origin) | Base URL of the FastAPI backend. Set to `http://localhost:8000` for local dev. In the single-URL Render deploy the frontend is served by FastAPI, so it's not needed. |
-| Backend | — | None | — | No environment variables are required. The DB path and data directory are fixed to `backend/` subfolders. |
+| Backend | `ELEVENLABS_API_KEY` | No | unset (voice disabled) | Enables **Read Aloud / AI Investigator narration / Flow Timeline voice narration**. Without it the `/api/tts/speak` endpoint returns `503` and the UI shows a disabled/error status instead of audio. The key is read from the environment only — never committed. |
 
-There are **no API keys anywhere** — the AI Investigator is fully deterministic.
+**No LLM is used and no keys are required** for the core app — the AI Investigator is fully deterministic. Voice features are the one opt-in external dependency: they need an ElevenLabs API key (server env var) and use free keyless translators (Google Translate with MyMemory fallback) for non-English narration.
 
 ## Project structure
 
@@ -176,6 +187,7 @@ flowsight/
 ├── backend/
 │   ├── app/                     # FastAPI application package
 │   │   ├── main.py              # all REST endpoints + static frontend serving
+│   │   ├── tts.py               # optional ElevenLabs text-to-speech (/api/tts/speak)
 │   │   ├── seed.py              # DB seeding + detection refresh on rule edits
 │   │   ├── engine.py            # rule-configurable detection engine wrapper
 │   │   ├── database.py          # SQLAlchemy engine + SQLite (WAL)
@@ -216,6 +228,7 @@ Selected endpoints (full list: `http://localhost:8000/docs`):
 | `GET /api/investigations/:id` | Investigation dossier (accounts, transactions, evidence, risk breakdown) |
 | `GET /api/investigations/:id/timeline` | Per-day flow-timeline data |
 | `POST /api/ai-investigator/query` | Evidence-grounded forensic Q&A |
+| `POST /api/tts/speak` | ElevenLabs text-to-speech — `{text, language}` → `audio/mpeg`; multi-language (English unchanged, others translated chunk-by-chunk via Google/MyMemory) |
 | `GET/POST /api/reports*` | Auto-generated SAR/STR-style reports |
 | `GET/PATCH /api/admin/rules` | Detection rule management (re-runs detection on change) |
 | `GET/POST/PATCH /api/admin/users` | User management |
@@ -224,7 +237,7 @@ Selected endpoints (full list: `http://localhost:8000/docs`):
 
 ## Deployment
 
-`render.yaml` deploys backend + built frontend as **one free Render web service**: the build steps `npm install && npm run build` in `frontend/`, then FastAPI serves the built app from `frontend/dist` at a single URL. Render's free tier spins down after ~15 min of idle; the optional GitHub Action (`.github/workflows/keepalive.yml`) pings `/api/health` every 10 minutes to keep it awake — set the repository variable `APP_URL` (e.g. `https://flowsight-vl0m.onrender.com`) to enable it. Since the free tier has an ephemeral disk, the app reseeds its SQLite DB at boot (a fresh DB may look slightly different from a local one).
+`render.yaml` deploys backend + built frontend as **one free Render web service**: the build steps `npm install && npm run build` in `frontend/`, then FastAPI serves the built app from `frontend/dist` at a single URL. Render's free tier spins down after ~15 min of idle; the optional GitHub Action (`.github/workflows/keepalive.yml`) pings `/api/health` every 10 minutes to keep it awake — set the repository variable `APP_URL` (e.g. `https://flowsight-vl0m.onrender.com`) to enable it. Since the free tier has an ephemeral disk, the app reseeds its SQLite DB at boot (a fresh DB may look slightly different from a local one). To enable voice features in production, add an `ELEVENLABS_API_KEY` environment variable in the Render service dashboard (do not commit it); the app deploys and works fine without it — voice buttons simply show an "unavailable" state.
 
 ## Known limitations
 
@@ -234,6 +247,7 @@ This is a **prototype/hackathon build** — honesty over polish:
 - **Demo authentication** — the login page uses one-click role presets (Analyst / Admin). There is no real auth, SSO, or permission enforcement.
 - **SQLite persistence** — used for prototype simplicity (WAL mode, busy timeout). Not horizontally scalable, no encryption at rest, single node.
 - **Deterministic AI, not generative** — the AI Investigator answers from rule-based templates over the dossier; it cites real evidence and never hallucinates, but it is not an LLM and does not produce open-ended analysis.
+- **Voice relies on external free tiers** — voice narration is optional and depends on an ElevenLabs API key plus free keyless translators. Translation providers rate-limit (Google ≈5 req/s, MyMemory ≈500 chars/request), so long non-English readings are chunked automatically; on rare rate-limit failures the UI shows an error and English narration always works.
 - **In-memory detection** — detection loads the full ledger into NetworkX in memory; fine for the sample corpus, but it won't scale to millions of rows without a distributed engine.
 - **Illustrative marketing metrics** on the landing page (transaction counts scanned, precision %, latency) are static mockups, not live instrumentation.
 - **Desktop-first UI** — mobile-responsive, but the graph-heavy views (Network Explorer, Flow Timeline) are designed for and best experienced on desktop.
