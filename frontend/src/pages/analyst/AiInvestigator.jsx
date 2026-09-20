@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
 import { api } from "../../lib/api.js"
+import { inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from "../../lib/runtime.js"
 
 const PRESETS = [
   { icon: "psychology", text: "Why was this network flagged?" },
@@ -21,10 +22,19 @@ function AiInvestigator() {
   const [showGuide, setShowGuide] = useState(true)
   const [toast, setToast] = useState({ msg: "", visible: false })
   const [appendBusy, setAppendBusy] = useState(false)
+  const [ttsState, setTtsState] = useState("")
+  const [ttsError, setTtsError] = useState("")
+  const [ttsLanguage, setTtsLanguage] = useState(getTtsLanguage)
   const toastTimer = useRef(null)
   const inputRef = useRef(null)
+  const audioRef = useRef(null)
 
-  useEffect(() => () => clearTimeout(toastTimer.current), [])
+  useEffect(() => () => { clearTimeout(toastTimer.current); audioRef.current?.pause() }, [])
+
+  const changeTtsLanguage = (code) => {
+    setTtsLanguage(code)
+    persistTtsLanguage(code)
+  }
 
   const showToast = (msg) => {
     setToast({ msg, visible: true })
@@ -36,6 +46,7 @@ function AiInvestigator() {
     if (e) e.preventDefault()
     if (!query.trim()) return
     
+    stopAudio()
     setLoading(true)
     try {
       const data = await api.aiQuery({
@@ -75,6 +86,65 @@ function AiInvestigator() {
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(val)
+  }
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    setTtsState("")
+    setTtsError("")
+  }
+
+  const buildNarration = (res) => {
+    const evs = Array.isArray(res?.evidence) ? res.evidence : []
+    const lines = []
+    if (res?.finding) lines.push(`Finding: ${res.finding}`)
+    if (evs.length) {
+      const evLines = evs.slice(0, 4).map((ev, i) => {
+        const parts = []
+        if (ev.txn_id) parts.push(ev.txn_id)
+        if (ev.amount > 0) parts.push(inrToWords(ev.amount))
+        if (ev.from && ev.to) parts.push(`from ${ev.from} to ${ev.to}`)
+        else if (ev.detail) parts.push(ev.detail)
+        return `item ${i + 1}: ${parts.join(", ")}`
+      })
+      if (evs.length > 4) evLines.push(`and ${evs.length - 4} more traced items`)
+      lines.push(`Evidence: ${evLines.join(". ")}`)
+    }
+    return lines.join(". ")
+  }
+
+  const readAloud = async () => {
+    if (!result || ttsState === "generating") return
+    if (ttsState === "playing") { stopAudio(); return }
+    setTtsError("")
+    const text = buildNarration(result)
+    if (!text) { showToast("Nothing to read for this response."); return }
+    setTtsState("generating")
+    try {
+      const blob = await api.speak(text, ttsLanguage)
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => {
+        URL.revokeObjectURL(url)
+        if (audioRef.current === audio) audioRef.current = null
+        setTtsState("")
+      }
+      audio.onerror = () => {
+        URL.revokeObjectURL(url)
+        if (audioRef.current === audio) audioRef.current = null
+        setTtsState("")
+        setTtsError("Audio playback failed. Please try again.")
+      }
+      await audio.play()
+      setTtsState("playing")
+    } catch (err) {
+      setTtsState("")
+      setTtsError(err.message || "Unable to generate audio.")
+    }
   }
 
   return (
@@ -175,6 +245,35 @@ function AiInvestigator() {
                       <h2 className="font-headline-md text-headline-md text-on-surface">Forensic Synthesis Report</h2>
                       <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-caps text-label-caps font-semibold">GROUNDED IN REAL DATA</span>
                     </div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  {ttsError && <span className="font-body-sm text-body-sm text-error">{ttsError}</span>}
+                  <div className="flex items-center gap-space-sm">
+                    <div className="relative flex items-center">
+                      <MaterialIcon name="translate" className="absolute left-2 text-on-surface-variant text-[16px] pointer-events-none" />
+                      <select
+                        className="h-9 pl-8 pr-7 rounded-lg bg-surface-container-lowest text-on-surface font-label-sm text-label-sm shadow-sm outline-none hover:bg-surface-container transition-colors cursor-pointer appearance-none"
+                        value={ttsLanguage}
+                        onChange={(e) => changeTtsLanguage(e.target.value)}
+                        disabled={ttsState === "generating" || ttsState === "playing"}
+                        title="Read aloud language"
+                        aria-label="Read aloud language"
+                      >
+                        {Object.entries(TTS_LANGUAGES).map(([code, name]) => (
+                          <option key={code} value={code}>{name}</option>
+                        ))}
+                      </select>
+                      <MaterialIcon name="expand_more" className="absolute right-1.5 text-on-surface-variant text-[16px] pointer-events-none" />
+                    </div>
+                    <button className={`h-9 flex items-center gap-space-xs pl-space-sm pr-space-base rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none ${ttsState === "playing" ? "text-primary" : ""}`} type="button" onClick={readAloud} disabled={ttsState === "generating"}>
+                      {ttsState === "generating" ? (
+                        <div className="w-4 h-4 border-2 border-on-surface border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <MaterialIcon name="volume_up" className="text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} />
+                      )}
+                      <span>{ttsState === "generating" ? "Generating audio…" : ttsState === "playing" ? "🔊 Playing…" : "🔊 Read Aloud"}</span>
+                    </button>
                   </div>
                 </div>
               </div>

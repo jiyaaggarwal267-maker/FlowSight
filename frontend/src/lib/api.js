@@ -68,6 +68,24 @@ export const api = {
   updateRulesBulk: (payload) =>
     request("/api/admin/rules", { method: "PATCH", body: JSON.stringify(payload) }),
   auditLogs: (params) => request(`/api/admin/audit-logs${qs(params)}`),
+  speak: async (text, language = "en") => {
+    const res = await fetch(`${BASE}/api/tts/speak`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, language }),
+    })
+    if (!res.ok) {
+      let detail = res.statusText
+      try {
+        const body = await res.json()
+        detail = body.detail || detail
+      } catch {
+        /* ignore non-JSON error body */
+      }
+      throw new Error(`${res.status} ${detail}`)
+    }
+    return res.blob()
+  },
 }
 
 const PATTERN_LABELS = {

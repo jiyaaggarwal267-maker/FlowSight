@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Link, useLocation, useParams } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
-import { notify, formatINR } from "../../lib/runtime.js"
+import { notify, formatINR, inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from "../../lib/runtime.js"
 import { api, patternLabel } from "../../lib/api.js"
 
 const NODE_POS = [
@@ -12,6 +12,23 @@ const NODE_POS = [
   { x: 575, y: 445 },
   { x: 480, y: 335 },
 ]
+
+function buildDayNarration(day, idx, days) {
+  const evs = Array.isArray(day.event_txns) ? day.event_txns : []
+  if ((day.txn_count || 0) === 0 && evs.length === 0) return null
+  const prev = new Set()
+  for (let i = 0; i < idx; i++) (days[i]?.event_txns || []).forEach((t) => { prev.add(t.from); prev.add(t.to) })
+  const cur = new Set()
+  evs.forEach((t) => { cur.add(t.from); cur.add(t.to) })
+  const fresh = [...cur].filter((a) => !prev.has(a)).length
+  const n = day.txn_count || evs.length
+  const parts = []
+  if (fresh > 0) parts.push(`${fresh} new account${fresh === 1 ? "" : "s"} join the network`)
+  parts.push(`${n} transaction${n === 1 ? "" : "s"}`)
+  if (day.volume > 0) parts.push(`moving ${inrToWords(day.volume)}`)
+  if (day.active_accounts) parts.push(`across ${day.active_accounts} active account${day.active_accounts === 1 ? "" : "s"}`)
+  return `Day ${day.day}: ${parts.join(", ")}.`
+}
 
 function FlowTimeline() {
   const { id: paramId } = useParams()
@@ -26,7 +43,14 @@ function FlowTimeline() {
   const [timeline, setTimeline] = useState(null)
   const [frame, setFrame] = useState(-1)
   const [playing, setPlaying] = useState(false)
+  const [narrationOn, setNarrationOn] = useState(false)
+  const [narrationLanguage, setNarrationLanguage] = useState(getTtsLanguage)
   const graphSvgRef = useRef(null)
+  const audioRef = useRef(null)
+  const narrationActive = useRef(false)
+  const narrationErrNotified = useRef(false)
+
+  useEffect(() => () => { narrationActive.current = false; audioRef.current?.pause() }, [])
 
   useEffect(() => {
     let alive = true
@@ -51,6 +75,7 @@ function FlowTimeline() {
   useEffect(() => {
     if (!playing) return
     const timer = setInterval(() => {
+      if (narrationActive.current) return
       setFrame((f) => {
         const nf = f + 1
         if (nf > lastIdx) {
@@ -63,6 +88,20 @@ function FlowTimeline() {
     }, 1100)
     return () => clearInterval(timer)
   }, [playing, loopOn, lastIdx])
+
+  const stopNarration = () => {
+    narrationActive.current = false
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+  }
+
+  const toggleNarration = () => {
+    if (narrationOn) stopNarration()
+    else narrationErrNotified.current = false
+    setNarrationOn((v) => !v)
+  }
 
   const id = inv?.id || initialId
   const summary = inv?.summary || {}
@@ -79,6 +118,51 @@ function FlowTimeline() {
     : "—"
   const spanDays = days.length || 0
   const currentDay = days[frameIdx] || null
+
+  useEffect(() => {
+    if (!playing || !narrationOn) return
+    const allDays = timeline?.days || []
+    const day = allDays[frameIdx]
+    if (!day) return
+    const text = buildDayNarration(day, frameIdx, allDays)
+    if (!text) return
+    let alive = true
+    narrationActive.current = true
+    api.speak(text, narrationLanguage)
+      .then((blob) => {
+        if (!alive) return
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audio.onended = () => {
+          narrationActive.current = false
+          if (audioRef.current === audio) audioRef.current = null
+          URL.revokeObjectURL(url)
+        }
+        audio.onerror = () => {
+          narrationActive.current = false
+          if (audioRef.current === audio) audioRef.current = null
+          URL.revokeObjectURL(url)
+        }
+        audio.onplay = () => { if (audioRef.current !== audio) audioRef.current = audio }
+        audioRef.current = audio
+        return audio.play()
+      })
+      .catch(() => {
+        narrationActive.current = false
+        if (!narrationErrNotified.current) {
+          narrationErrNotified.current = true
+          notify({ title: "Voice narration unavailable", body: "Could not generate audio for timeline narration.", tone: "secondary" })
+        }
+      })
+    return () => {
+      alive = false
+      narrationActive.current = false
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [playing, narrationOn, frameIdx, timeline, narrationLanguage])
 
   const sortedAccounts = [...accounts].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0)).slice(0, 6)
   const posById = {}
@@ -326,6 +410,25 @@ function FlowTimeline() {
                   <MaterialIcon name="repeat" className="text-[16px]" />
                   <span>Loop {loopOn ? "On" : "Off"}</span>
                 </button>
+                <button className={`flex items-center gap-space-2xs px-space-sm py-1 rounded font-label-sm text-label-sm cursor-pointer ${narrationOn ? "bg-surface-container-low text-primary" : "bg-surface-container text-on-surface-variant"}`} type="button" onClick={toggleNarration}>
+                  <MaterialIcon name="volume_up" className="text-[16px]" />
+                  <span>🔊 Voice Narration {narrationOn ? "On" : "Off"}</span>
+                </button>
+                <div className="relative flex items-center">
+                  <MaterialIcon name="translate" className="absolute left-2 text-on-surface-variant text-[16px] pointer-events-none" />
+                  <select
+                    className="h-9 pl-8 pr-7 rounded-lg bg-surface-container-lowest text-on-surface font-label-sm text-label-sm shadow-sm outline-none hover:bg-surface-container transition-colors cursor-pointer appearance-none"
+                    value={narrationLanguage}
+                    onChange={(e) => { setNarrationLanguage(e.target.value); persistTtsLanguage(e.target.value) }}
+                    title="Voice narration language"
+                    aria-label="Voice narration language"
+                  >
+                    {Object.entries(TTS_LANGUAGES).map(([code, name]) => (
+                      <option key={code} value={code}>{name}</option>
+                    ))}
+                  </select>
+                  <MaterialIcon name="expand_more" className="absolute right-1.5 text-on-surface-variant text-[16px] pointer-events-none" />
+                </div>
                 <button className="flex items-center gap-space-xs px-space-md py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors shadow-sm cursor-pointer" type="button" onClick={captureFrame}>
                   <MaterialIcon name="camera" className="text-[16px]" />
                   <span>Capture Frame</span>

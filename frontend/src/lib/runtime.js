@@ -16,6 +16,22 @@ export const bus = {
 
 export const THEME_KEY = "flowsight-theme"
 
+export const TTS_LANG_KEY = "flowsight_tts_lang"
+
+export const TTS_LANGUAGES = {
+  en: "English", hi: "Hindi", bgc: "Haryanvi", ta: "Tamil", te: "Telugu",
+  mr: "Marathi", bn: "Bengali", gu: "Gujarati",
+  kn: "Kannada", ml: "Malayalam", pa: "Punjabi",
+}
+
+export function getTtsLanguage() {
+  try { return localStorage.getItem(TTS_LANG_KEY) || "en" } catch { return "en" }
+}
+
+export function persistTtsLanguage(code) {
+  try { localStorage.setItem(TTS_LANG_KEY, code) } catch { /* storage unavailable */ }
+}
+
 export function getTheme() {
   if (typeof localStorage === "undefined") return "light"
   const stored = localStorage.getItem(THEME_KEY)
@@ -54,6 +70,31 @@ export function formatCompactINR(value) {
     return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)} L`
   }
   return n.toLocaleString("en-IN")
+}
+
+const ONES = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+function twoWords(n) {
+  if (n < 20) return ONES[n]
+  const t = Math.floor(n / 10)
+  const o = n % 10
+  return o ? `${TENS[t]}-${ONES[o]}` : TENS[t]
+}
+
+export function inrToWords(value) {
+  let n = Math.round(Number(value) || 0)
+  if (n <= 0) return "zero rupees"
+  const parts = []
+  for (const [name, scale] of [["crore", 1e7], ["lakh", 1e5], ["thousand", 1e3], ["hundred", 1e2]]) {
+    if (n >= scale) {
+      const q = Math.floor(n / scale)
+      parts.push(`${twoWords(q)} ${name}`)
+      n -= q * scale
+    }
+  }
+  if (n > 0) parts.push(twoWords(n))
+  return parts.length ? `${parts.join(" ")} rupees` : "zero rupees"
 }
 
 const NOTIFICATIONS = [

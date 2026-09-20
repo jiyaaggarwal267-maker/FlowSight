@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link, useParams } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
 import { api } from "../../lib/api.js"
@@ -11,6 +11,30 @@ function InvestigationView() {
   const [modalContent, setModalContent] = useState([])
   const [actionBusy, setActionBusy] = useState("")
   const [statusMsg, setStatusMsg] = useState("")
+  const [ttsBusy, setTtsBusy] = useState("")
+  const [ttsError, setTtsError] = useState("")
+  const [ttsLanguage, setTtsLanguage] = useState(() => {
+    try { return localStorage.getItem("flowsight_tts_lang") || "en" } catch { return "en" }
+  })
+  const audioRef = useRef(null)
+
+  const TTS_LANGUAGES = {
+    en: "English", hi: "Hindi", bgc: "Haryanvi", ta: "Tamil", te: "Telugu",
+    mr: "Marathi", bn: "Bengali", gu: "Gujarati",
+    kn: "Kannada", ml: "Malayalam", pa: "Punjabi",
+  }
+
+  const changeTtsLanguage = (code) => {
+    setTtsLanguage(code)
+    try { localStorage.setItem("flowsight_tts_lang", code) } catch { /* storage unavailable */ }
+  }
+
+  useEffect(() => () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ""
+    }
+  }, [])
 
   const assignLead = () => {
     if (actionBusy) return
@@ -34,6 +58,51 @@ function InvestigationView() {
       .then((r) => setStatusMsg(`Investigation report generated · ${r.id}`))
       .catch((err) => setStatusMsg(`Report generation failed: ${err.message}`))
       .finally(() => setActionBusy(""))
+  }
+
+  const readAloud = () => {
+    if (ttsBusy) return
+    setTtsError("")
+    setTtsBusy("generating")
+    const patterns = (inv?.summary?.pattern_types || []).join(", ") || "a suspicious transaction pattern"
+    const acctIds = accts.map((a) => a.id)
+    const path = acctIds.slice(0, 4).join(" to ")
+    const loopNote = acctIds.length > 1 && path ? ` ${path}, returning to origin.` : "."
+    const totalAmt = txns.reduce((s, t) => s + (Number(t.amount) || 0), 0)
+    const speech =
+      `Investigation ${id}. Risk score ${risk} out of 100. ` +
+      `${patterns} detected, involving ${accts.length} accounts${loopNote} ` +
+      `${txns.length} transactions are in scope, moving a total of ` +
+      `₹${Math.round(totalAmt).toLocaleString("en-IN")}.`
+    api
+      .speak(speech, ttsLanguage)
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audioRef.current = audio
+        setTtsBusy("playing")
+        audio.onended = () => {
+          URL.revokeObjectURL(url)
+          audioRef.current = null
+          setTtsBusy("")
+        }
+        audio.onerror = () => {
+          URL.revokeObjectURL(url)
+          audioRef.current = null
+          setTtsBusy("")
+          setTtsError("Playback failed — the audio could not be played in this browser.")
+        }
+        return audio.play().catch(() => {
+          URL.revokeObjectURL(url)
+          audioRef.current = null
+          setTtsBusy("")
+          setTtsError("Playback was blocked by the browser. Click the button again to retry.")
+        })
+      })
+      .catch((err) => {
+        setTtsBusy("")
+        setTtsError(`Read aloud unavailable: ${err.message}`)
+      })
   }
 
   useEffect(() => {
@@ -388,8 +457,38 @@ function InvestigationView() {
                   <h2 className="font-headline-md text-headline-md text-on-surface">Why was this network flagged?</h2>
                 </div>
               </div>
-              <span className="font-label-caps text-label-caps px-space-sm py-1 bg-surface-container rounded-full text-on-surface font-semibold">{accts.length} Accounts</span>
+              <div className="flex items-center gap-space-sm">
+                <div className="relative flex items-center">
+                  <MaterialIcon name="translate" className="absolute left-2 text-on-surface-variant text-[16px] pointer-events-none" />
+                  <select
+                    className="h-9 pl-8 pr-7 rounded-lg bg-surface-container-lowest text-on-surface font-label-sm text-label-sm shadow-sm outline-none hover:bg-surface-container transition-colors cursor-pointer appearance-none"
+                    value={ttsLanguage}
+                    onChange={(e) => changeTtsLanguage(e.target.value)}
+                    disabled={!!ttsBusy}
+                    title="Read aloud language"
+                    aria-label="Read aloud language"
+                  >
+                    {Object.entries(TTS_LANGUAGES).map(([code, name]) => (
+                      <option key={code} value={code}>{name}</option>
+                    ))}
+                  </select>
+                  <MaterialIcon name="expand_more" className="absolute right-1.5 text-on-surface-variant text-[16px] pointer-events-none" />
+                </div>
+                <button className="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-high transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer" type="button" onClick={readAloud} disabled={!!ttsBusy}>
+                  <MaterialIcon name={ttsBusy === "playing" ? "graphic_eq" : "volume_up"} className="text-[16px] text-primary" />
+                  <span className="font-label-sm text-label-sm font-medium">
+                    {ttsBusy === "generating" ? "Generating…" : ttsBusy === "playing" ? "🔊 Playing…" : "🔊 Read Aloud"}
+                  </span>
+                </button>
+                <span className="font-label-caps text-label-caps px-space-sm py-1 bg-surface-container rounded-full text-on-surface font-semibold">{accts.length} Accounts</span>
+              </div>
             </div>
+            {ttsError && (
+              <div className="mb-space-lg flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-error-container text-on-error-container text-body-sm text-body-sm">
+                <MaterialIcon name="error" className="text-[16px]" />
+                <span>{ttsError}</span>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md mb-space-lg">
               <div className="p-space-md rounded-lg bg-surface-container-low flex flex-col justify-between">
                 <div>

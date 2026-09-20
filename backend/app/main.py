@@ -39,6 +39,7 @@ from .models import (
     User,
 )
 from .seed import audit, refresh_detection, seed_if_needed
+from .tts import router as tts_router
 
 DATA_DIR = BACKEND_ROOT / "data"
 
@@ -85,6 +86,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(tts_router)
 
 
 def _add_column_if_missing(conn, insp, table: str, *columns) -> None:
