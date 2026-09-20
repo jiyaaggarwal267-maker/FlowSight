@@ -147,11 +147,11 @@ function FlowTimeline() {
         audioRef.current = audio
         return audio.play()
       })
-      .catch(() => {
+      .catch((err) => {
         narrationActive.current = false
         if (!narrationErrNotified.current) {
           narrationErrNotified.current = true
-          notify({ title: "Voice narration unavailable", body: "Could not generate audio for timeline narration.", tone: "secondary" })
+          notify({ title: "Voice narration unavailable", body: err?.message || "Could not generate audio for timeline narration.", tone: "secondary" })
         }
       })
     return () => {

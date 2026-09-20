@@ -22,8 +22,11 @@ router = APIRouter(prefix="/api/tts", tags=["tts"])
 
 # Standard pre-made professional voice from the ElevenLabs voice library.
 VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"  # "George"
-MODEL_ID = "eleven_multilingual_v2"
-OUTPUT_FORMAT = "mp3_44100_128"
+# Flash v2.5 is the cheapest multilingual model (1x credits app, support for
+# all offered languages); the mono 22.05kHz/32kbps output keeps per-character
+# credit cost to a minimum so quota lasts longer on free/entry plans.
+MODEL_ID = "eleven_flash_v2_5"
+OUTPUT_FORMAT = "mp3_22050_32"
 
 MAX_TEXT_LENGTH = 2000
 
@@ -158,12 +161,20 @@ def speak(payload: SpeakRequest) -> StreamingResponse:
     # mid-stream connection drop.
     try:
         first = next(iter(chunks))
-    except Exception:
+    except Exception as exc:
         logger.exception("ElevenLabs TTS request failed")
-        raise HTTPException(
-            status_code=502,
-            detail="Speech generation failed. Check ELEVENLABS_API_KEY and account quota.",
-        ) from None
+        detail = (getattr(exc, "body", None) or {}).get("detail") or {}
+        dmsg = detail.get("message") if isinstance(detail, dict) else None
+        if isinstance(detail, dict) and detail.get("code") == "quota_exceeded":
+            detail_msg = (
+                "ElevenLabs speech quota exhausted. Upgrade your ElevenLabs plan, "
+                "wait for the monthly reset, use a different API key, or switch the voice back to English."
+            )
+        elif getattr(exc, "status_code", None) == 401:
+            detail_msg = f"ElevenLabs rejected the request — {dmsg or 'API key is invalid or not authorized for TTS.'}"
+        else:
+            detail_msg = "Speech generation failed. Check ELEVENLABS_API_KEY and account quota."
+        raise HTTPException(status_code=502, detail=detail_msg) from None
 
     def stream() -> Iterator[bytes]:
         yield first
