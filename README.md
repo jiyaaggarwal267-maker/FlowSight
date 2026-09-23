@@ -237,7 +237,60 @@ Selected endpoints (full list: `http://localhost:8000/docs`):
 
 ## Deployment
 
-`render.yaml` deploys backend + built frontend as **one free Render web service**: the build steps `npm install && npm run build` in `frontend/`, then FastAPI serves the built app from `frontend/dist` at a single URL. Render's free tier spins down after ~15 min of idle; the optional GitHub Action (`.github/workflows/keepalive.yml`) pings `/api/health` every 10 minutes to keep it awake — set the repository variable `APP_URL` (e.g. `https://flowsight-vl0m.onrender.com`) to enable it. Since the free tier has an ephemeral disk, the app reseeds its SQLite DB at boot (a fresh DB may look slightly different from a local one). To enable voice features in production, add an `ELEVENLABS_API_KEY` environment variable in the Render service dashboard (do not commit it); the app deploys and works fine without it — voice buttons simply show an "unavailable" state.
+The app ships as a **single image that serves both the built React frontend and the FastAPI backend** (SQLite + built-in static serving), so it runs anywhere with Docker — or any host that runs `uvicorn app.main:app --app-dir backend`.
+
+### Free-reliable: Oracle Cloud "Always Free" VM ($0, always-on, never sleeps)
+
+As of 2026, every mainstream free tier that ran Python web servers has been discontinued or paywalled (Render's free web services are gone, Fly/Railway need billing, Hugging Face Spaces now requires PRO for Docker compute). The last genuinely **always-on** free option is Oracle Cloud's Always Free tier — a full VM that never sleeps, free for the life of the account:
+
+1. Sign up at [oracle.com/cloud/free](https://www.oracle.com/cloud/free). A **card is required for identity verification only — it is never charged**. Reject common signup-verification failures by retrying with a different browser/device if the page errors out.
+2. Console → **Compute → Instances → Create instance**:
+   - Image: **Ubuntu 24.04** (or Oracle Linux), Shape: **VM.Standard.A1.Flex**, **2 OCPU / 12 GB** (current Always Free limit). If "Out of capacity" in your region, resize smaller or try again later.
+   - Add your **SSH public key** and create the instance.
+3. Open the firewall — **Networking → Virtual cloud networks → your VCN → Security List → Add Ingress Rules**: `TCP 0.0.0.0/0` for ports **80** and **443**.
+4. On the VM: pick up `docker` and the image.
+   ```bash
+   sudo apt update && sudo apt install -y docker.io && sudo systemctl enable --now docker
+   git clone https://github.com/<you>/flowsight.git && cd flowsight
+   sudo docker build -t flowsight .
+   # optional: enable voice
+   #sudo docker run -d --name flowsight -p 80:7860 --restart unless-stopped -e ELEVENLABS_API_KEY=sk_xxx flowsight
+   sudo docker run -d --name flowsight -p 80:7860 --restart unless-stopped flowsight
+   ```
+5. Visit `http://<instance-public-ip>` — the whole app (React UI + API + SQLite) serves from that one container. The Ethernet IP is `curl -4 ifconfig.me` from the VM.
+
+Keep-alive (important, free): Oracle may reclaim an Always Free instance it deems **idle** (95th-percentile CPU < 15% for 7 days). Add a free [UptimeRobot](https://uptimerobot.com) HTTPS monitor hitting `http://<ip>/api/health` every 5 minutes, and optionally a lightweight CPU-warm cronjob, to keep utilization above the threshold. Also sign in to the console roughly once a month — accounts idle 30+ days can be suspended.
+
+### No credit card: FastAPI Cloud ($0, free forever) — recommended default
+
+Live at **https://flowsight-app.fastapicloud.dev**. From the FastAPI team, free as long as you want and **no credit card**. The $0 Hobby plan gives 3 apps, automatic HTTPS, and scale-to-zero. It won't build the React app for you, and its runtime mounts only the app directory — so the built UI is copied into `backend/frontend/dist` (un-ignored via `.fastapicloudignore`) and `app/main.py` resolves it there (`_find_frontend_dist()`). Trade-off: the app **sleeps** after inactivity and the first visitor hits a short cold start; SQLite data resets on wake (the app reseeds at boot). In other words it works, but isn't instant-always.
+
+Deploy (run from this repo root):
+
+```bash
+# 1. one-time: install the CLI (into the backend venv)
+source backend/.venv/bin/activate
+pip install "fastapi[standard]"
+fastapi login
+
+# 2. every deploy: rebuild the frontend, copy UI into the app dir, deploy
+cd frontend && npm run build && cd ..
+rm -rf backend/frontend/dist && cp -R frontend/dist backend/frontend/dist
+fastapi deploy      # from the repo root; app was created with --directory backend
+
+# optional: set an ELEVENLABS_API_KEY so voice features work
+fastapi cloud env set ELEVENLABS_API_KEY sk_xxx --app-id <app-id>
+```
+
+> Tips: keep the first `fastapi deploy` from becoming a "reuse image" no-op by **caching the image once with the UI present** (build on a fresh app first, as done here). Delete the leftover `flowsight` app in the [dashboard](https://dashboard.fastapicloud.com) if you don't use it.
+
+The app's **Application Directory is already set to `backend`** (created via `fastapi cloud apps create --directory backend`), which is where `app/main.py` and `backend/requirements.txt` live. Your app is served from a `https://<app>.fastapicloud.dev` URL; set `ELEVENLABS_API_KEY` under the app's env vars (`fastapi cloud env set ELEVENLABS_API_KEY sk_xxx`) if you want voice features.
+
+> Notes: GitHub's push-based integration can't build the frontend yet, so use the local `fastapi deploy` flow above. On the free tier the app runs on ~0.1 vCPU / 512 MB — plenty for the ~15K-transaction demo corpus.
+
+### One-service Render (previously)
+
+`render.yaml` deploys backend + built frontend as **one Render web service**: the build steps `npm install && npm run build` in `frontend/`, then FastAPI serves the built app from `frontend/dist` at a single URL. Render's free tier was discontinued in 2025 (services are suspended until payment is added), so it is kept here only for reference. If paid hosting is ever acceptable, run `docker build` and `docker run` of this same `Dockerfile` on Render/Railway/Fly and set `PORT` to the platform-provided value.
 
 ## Known limitations
 

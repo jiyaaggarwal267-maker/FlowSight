@@ -6,3 +6,4 @@ dist/
 flowsight.db
 flowsight.db-shm
 flowsight.db-wal
+dist/

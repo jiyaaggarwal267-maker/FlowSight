@@ -14,6 +14,8 @@ function NetworkExplorer() {
   const [selected, setSelected] = useState("")
   const [accounts, setAccounts] = useState([])
   const [net, setNet] = useState(null)
+  const [netError, setNetError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
   const [drawerOpen, setDrawerOpen] = useState(true)
   const [suspiciousOnly, setSuspiciousOnly] = useState(true)
   const [layoutMode, setLayoutMode] = useState("Force Directed")
@@ -44,11 +46,12 @@ function NetworkExplorer() {
 
   useEffect(() => {
     let alive = true
+    setNetError(false)
     api.network({ suspicious_only: suspiciousOnly ? "true" : "false" })
       .then((d) => { if (alive) { setNet(d); setView({ x: 0, y: 0, k: 1 }) } })
-      .catch(() => {})
+      .catch(() => { if (alive) setNetError(true) })
     return () => { alive = false }
-  }, [suspiciousOnly])
+  }, [suspiciousOnly, retryKey])
 
   const nodesData = net?.nodes || []
   const edgesData = net?.edges || []
@@ -266,7 +269,7 @@ function NetworkExplorer() {
           onWheel={onWheel}
           ref={canvasRef}
         >
-          {loading ? (
+          {loading || !net ? (
             <div className="absolute inset-0 p-space-base flex flex-col gap-space-md">
               <div className="flex items-center gap-2">
                 <span className="px-space-sm py-0.5 rounded bg-error-container text-error font-label-caps text-label-caps font-bold uppercase tracking-wider">Graph Loading</span>
@@ -278,6 +281,15 @@ function NetworkExplorer() {
                 <Skeleton className="h-24 w-40" />
                 <Skeleton className="h-24 w-40" />
               </div>
+            </div>
+          ) : netError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-space-sm text-on-surface-variant px-space-base text-center">
+              <MaterialIcon name="cloud_off" className="text-[48px] text-outline" />
+              <span className="font-headline-sm text-headline-sm">Graph data unavailable</span>
+              <span className="font-body-sm text-body-sm max-w-sm">The topology API could not be reached. The browser may be pointed at a local frontend without the backend running.</span>
+              <button className="mt-1 h-9 px-space-md rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center gap-space-xs transition-colors cursor-pointer" type="button" onClick={() => setRetryKey((k) => k + 1)}>
+                <MaterialIcon name="refresh" className="text-[18px]" /> Retry
+              </button>
             </div>
           ) : nodes.length === 0 ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-space-sm text-on-surface-variant">

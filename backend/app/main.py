@@ -1189,7 +1189,23 @@ def reports_generate(payload: dict, db: Session = Depends(get_db)) -> dict:
 
 # ── static frontend (single-URL deployment) ────────────────────────────
 
-FRONTEND_DIST = BACKEND_ROOT.parent / "frontend" / "dist"
+def _find_frontend_dist() -> Path:
+    """Locate the built frontend across deployment layouts.
+
+    Local dev / Docker keep the build at <repo>/frontend/dist, while
+    FastAPI Cloud mounts only the application directory (<repo>/backend),
+    so the build is copied to backend/frontend/dist there.
+    """
+    for candidate in (
+        BACKEND_ROOT.parent / "frontend" / "dist",
+        BACKEND_ROOT / "frontend" / "dist",
+    ):
+        if (candidate / "index.html").is_file():
+            return candidate
+    return BACKEND_ROOT.parent / "frontend" / "dist"
+
+
+FRONTEND_DIST = _find_frontend_dist()
 DIST_EXISTS = (FRONTEND_DIST / "index.html").is_file()
 
 if DIST_EXISTS:

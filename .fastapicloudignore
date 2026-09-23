@@ -1,0 +1,7 @@
+# FastAPI Cloud packages files per .gitignore first; this file
+# re-includes the built frontend (dist/ is git-ignored) so a single
+# deployment serves both the API and the React UI.
+#
+# The runtime only mounts the application directory (backend/), so the
+# built UI lives at backend/frontend/dist and must be un-ignored here.
+!backend/frontend/dist/
