@@ -7,17 +7,21 @@ edited. No LLM/AI functionality in this step.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import os
 import sys
+import threading
 from collections import Counter, defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -43,16 +47,24 @@ from .tts import router as tts_router
 
 DATA_DIR = BACKEND_ROOT / "data"
 
+# Startup (create tables + seed + detection) is slow and the platform scales to
+# zero, so the process is routinely asked to boot on a user's first request.
+# The app therefore binds and serves the UI immediately, then finishes booting
+# in a worker thread; data endpoints wait on READY rather than 404ing or
+# serving a half-seeded database.
+_READY = threading.Event()
+_BOOT_ERROR: BaseException | None = None
+
 
 def _init_database() -> None:
-    """Create tables and seed data before the app starts serving requests.
+    """Create tables and seed data before data endpoints serve requests.
 
-    Render's free tier keeps an ephemeral disk, so the instance and its
-    SQLite DB can be wiped at any time. Running this synchronously at boot
-    (instead of in a background thread) guarantees a recycled or restarted
-    service never serves requests against an empty/partial database: the
-    app only starts accepting traffic once seeding has completed.
+    The platform's disk is ephemeral, so a recycled instance can wake against
+    an empty/partial SQLite file. This runs once per process: a fresh boot
+    seeds and re-runs detection, a warm boot reuses the existing rows and only
+    backfills alerts if a previous run died mid-detection.
     """
+    global _BOOT_ERROR
     from sqlalchemy import inspect
     from .database import Base, SessionLocal, engine
 
@@ -64,6 +76,7 @@ def _init_database() -> None:
                                ("freeze_reason", "VARCHAR(256)", "''"))
         _add_column_if_missing(conn, insp, "investigations",
                                ("findings_json", "JSON", "'[]'"))
+        _create_indexes(conn, insp)
 
     db = SessionLocal()
     try:
@@ -72,13 +85,121 @@ def _init_database() -> None:
         db.close()
 
 
+def _create_indexes(conn, insp) -> None:
+    """Add query indexes the API relies on.
+
+    Without these, `/api/accounts/{id}` and `/api/transactions` degrade into
+    full table scans of the 15k-row transaction table on every request.
+    `IF NOT EXISTS` keeps this safe to re-run on every boot.
+    """
+    from sqlalchemy import text
+
+    wanted = [
+        ("ix_transactions_from_account", "transactions", "(from_account)"),
+        ("ix_transactions_to_account", "transactions", "(to_account)"),
+        ("ix_transactions_timestamp", "transactions", "(timestamp)"),
+        ("ix_transactions_channel", "transactions", "(channel)"),
+        ("ix_accounts_risk_score", "accounts", "(risk_score)"),
+    ]
+    tables = set(insp.get_table_names())
+    for name, table, cols in wanted:
+        if table not in tables:
+            continue
+        existing = {ix["name"] for ix in insp.get_indexes(table)}
+        if name in existing:
+            continue
+        conn.execute(text(f"CREATE INDEX IF NOT EXISTS {name} ON {table} {cols}"))
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    _init_database()
+    """Serve immediately; boot the database in the background.
+
+    Seeding is CPU/IO bound and would otherwise block the event loop, so it
+    runs in a worker thread while the event loop stays free to answer the
+    static UI. `_await_boot` gates only the endpoints that need seeded data.
+    """
+    threading.Thread(target=_boot_database, name="flowsight-boot",
+                     daemon=True).start()
     yield
 
 
+def _boot_database() -> None:
+    global _BOOT_ERROR
+    try:
+        _init_database()
+    except BaseException as exc:  # noqa: BLE001 - surfaced through _await_boot
+        _BOOT_ERROR = exc
+    finally:
+        _READY.set()
+
+
+# A cold container has to seed the whole database before it can answer. Capping
+# the wait means a request that arrives mid-boot fails fast with a retryable
+# 503 instead of hanging until the edge proxy gives up and returns a bare
+# gateway error, which is indistinguishable from the backend being down. The
+# client retries with backoff, so the user sees a short wait rather than a
+# broken page.
+BOOT_WAIT_TIMEOUT_S = float(os.getenv("FLOWSIGHT_BOOT_WAIT_TIMEOUT_S", "20"))
+
+
+async def _await_boot() -> JSONResponse | None:
+    """Wait for the background seed, returning a retryable 503 if it is slow.
+
+    Returns the response instead of raising HTTPException on purpose: this runs
+    inside BaseHTTPMiddleware, which sits *outside* Starlette's
+    ExceptionMiddleware, so an HTTPException raised here is never converted into
+    a 503 — it escapes as an opaque 500. That turned every slow boot into a
+    "backend is broken" error rather than a retryable one.
+
+    The wait is capped so a request arriving mid-boot fails fast and the client
+    can retry, instead of hanging until the edge proxy gives up.
+    """
+    if not _READY.is_set():
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + BOOT_WAIT_TIMEOUT_S
+        # Poll rather than blocking a worker thread on Event.wait(): a thread
+        # parked there cannot be cancelled, so it would linger for the life of
+        # the process and stall interpreter shutdown. Polling costs nothing at
+        # 50ms and keeps the event loop entirely free.
+        while not _READY.is_set():
+            if loop.time() >= deadline:
+                return JSONResponse(
+                    status_code=503,
+                    content={"detail": "database is still seeding, retry shortly"},
+                    headers={"Retry-After": "2"},
+                )
+            await asyncio.sleep(0.05)
+    if _BOOT_ERROR is not None:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "database unavailable"},
+            headers={"Retry-After": "5"},
+        )
+    return None
+
+
 app = FastAPI(title="FLOWSIGHT API", version="2.0.0", description=__doc__, lifespan=lifespan)
+
+# Graph payloads are large and very compressible; gzip keeps the network graph
+# and report listings cheap to transfer.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+@app.middleware("http")
+async def await_database_boot(request: Request, call_next):
+    """Hold API responses until the background boot has finished seeding.
+
+    Only `/api/*` needs seeded data, and `/api/health` is deliberately exempt
+    so uptime/keep-alive probes answer immediately (and can report the boot
+    state) instead of blocking behind the seed.
+    """
+    path = request.url.path
+    if path.startswith("/api/") and path != "/api/health":
+        blocked = await _await_boot()
+        if blocked is not None:
+            return blocked
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -348,27 +469,42 @@ def overview(db: Session = Depends(get_db)) -> dict:
 @app.get("/api/network")
 def network(
     suspicious_only: bool = Query(False),
+    limit: int = Query(0, ge=0, le=1000,
+                       description="Max nodes, highest risk first. 0 = no cap."),
+    edge_limit: int = Query(0, ge=0, le=20000,
+                            description="Max edges, largest value first. 0 = no cap."),
+    min_amount: float = Query(0, ge=0),
+    channel: str = Query(""),
     db: Session = Depends(get_db),
 ) -> dict:
+    """Graph payload for the network views.
+
+    The full corpus is 15k transactions, which is a ~3MB response that no view
+    can draw. `limit`/`edge_limit` let the caller ask for the slice it will
+    actually render; edges are always restricted to the returned nodes so the
+    graph stays self-consistent.
+    """
     accts = db.execute(select(Account)).scalars().all()
-    txns = db.execute(select(Transaction)).scalars().all()
     findings = _findings_from_alerts(db)
 
     involved: set[str] = set()
     for f in findings:
         involved.update(f["accounts"])
-    suspicious_ids = involved if suspicious_only else None
 
+    if suspicious_only:
+        accts = [a for a in accts if a.id in involved]
+    if limit:
+        accts = sorted(accts, key=lambda a: -a.risk_score)[:limit]
+
+    acct_ids = {a.id for a in accts}
+    txns = db.execute(select(Transaction)).scalars().all()
     degree: Counter[str] = Counter()
     for t in txns:
         degree[t.from_account] += 1
         degree[t.to_account] += 1
 
-    nodes = []
-    for a in accts:
-        if suspicious_ids is not None and a.id not in suspicious_ids:
-            continue
-        nodes.append({
+    nodes = [
+        {
             "id": a.id,
             "entity": a.entity,
             "category": a.category,
@@ -380,17 +516,28 @@ def network(
             "degree": degree.get(a.id, 0),
             "total_sent": a.total_sent,
             "total_received": a.total_received,
-        })
+        }
+        for a in accts
+    ]
 
+    # Only keep flows between nodes that are actually being returned.
     edges = []
     for t in txns:
-        if suspicious_ids is not None and (
-            t.from_account not in suspicious_ids or t.to_account not in suspicious_ids
-        ):
+        if t.from_account not in acct_ids or t.to_account not in acct_ids:
+            continue
+        if min_amount and t.amount < min_amount:
+            continue
+        if channel and t.channel != channel:
             continue
         edges.append(_txn_dict(t))
 
-    return {"nodes": nodes, "edges": edges}
+    if edge_limit:
+        edges.sort(key=lambda e: -e["amount"])
+        edges = edges[:edge_limit]
+    edges.sort(key=lambda e: e["timestamp"], reverse=True)
+
+    return {"nodes": nodes, "edges": edges,
+            "total_nodes": len(accts), "total_edges": len(edges)}
 
 
 # ── 3. accounts list + detail ─────────────────────────────────────────
@@ -697,11 +844,30 @@ def investigation_timeline(
             .scalars().all()) if txn_ids else []
 
     if not txns:
-        return {"investigation_id": inv.id, "days": []}
+        return {"investigation_id": inv.id, "days": [], "accounts": []}
 
     txns.sort(key=lambda t: t.timestamp)
     start = txns[0].timestamp.date()
     end = txns[-1].timestamp.date()
+
+    # Every account appearing in the scoped transactions. The dossier only
+    # lists the accounts the detector flagged (often a single hub), but the
+    # timeline graph needs the counterparties too or it renders no edges.
+    involved_ids = {t.from_account for t in txns} | {t.to_account for t in txns}
+    involved = {
+        a.id: _acct_dict(a)
+        for a in db.execute(
+            select(Account).where(Account.id.in_(involved_ids))
+        ).scalars().all()
+    }
+    flow: dict[str, float] = defaultdict(float)
+    for t in txns:
+        flow[t.from_account] += t.amount
+        flow[t.to_account] += t.amount
+    involved_accounts = sorted(
+        involved.values(),
+        key=lambda a: (-flow.get(a["id"], 0.0), -a["risk_score"], a["id"]),
+    )
 
     days: list[dict] = []
     cumulative_volume = 0.0
@@ -743,6 +909,7 @@ def investigation_timeline(
         "total_volume": round(cumulative_volume, 2),
         "total_txns": cumulative_txns,
         "days": days,
+        "accounts": involved_accounts,
     }
 
 
@@ -805,32 +972,71 @@ def investigation_append_findings(
 
 @app.get("/api/entities")
 def entities(db: Session = Depends(get_db)) -> dict:
-    accts = db.execute(select(Account)).scalars().all()
-    txns = db.execute(select(Transaction)).scalars().all()
-    agg: dict[str, dict] = {}
-    for a in accts:
-        e = agg.setdefault(a.entity, {
-            "entity": a.entity, "accounts": 0, "volume_in": 0.0,
-            "volume_out": 0.0, "txns": 0, "risk": 0,
-        })
-        e["accounts"] += 1
-        e["risk"] += a.risk_score
-    for t in txns:
-        fa = next((a for a in accts if a.id == t.from_account), None)
-        ta = next((a for a in accts if a.id == t.to_account), None)
-        if fa:
-            agg[fa.entity]["volume_out"] += t.amount
-            agg[fa.entity]["txns"] += 1
-        if ta:
-            agg[ta.entity]["volume_in"] += t.amount
-    rows = [
-        {**v, "risk": min(v["risk"], 100),
-         "volume_in": round(v["volume_in"], 2),
-         "volume_out": round(v["volume_out"], 2)}
-        for v in agg.values()
+    """Per-entity rollup, aggregated in SQL.
+
+    This used to load every account and all 15k transactions into Python and
+    group them there. On the low-CPU cloud instance that dominated the request
+    (~0.5s); letting SQLite do the grouping returns only one row per entity.
+    """
+    base = (
+        select(
+            Account.entity.label("entity"),
+            func.count(Account.id).label("accounts"),
+            func.sum(Account.risk_score).label("risk"),
+        )
+        .group_by(Account.entity)
+        .subquery()
+    )
+    # Outbound only, matching the original semantics of the `txns` counter.
+    outflow = (
+        select(
+            Account.entity.label("entity"),
+            func.sum(Transaction.amount).label("volume_out"),
+            func.count(Transaction.id).label("txns"),
+        )
+        .select_from(Transaction)
+        .join(Account, Account.id == Transaction.from_account)
+        .group_by(Account.entity)
+        .subquery()
+    )
+    inflow = (
+        select(
+            Account.entity.label("entity"),
+            func.sum(Transaction.amount).label("volume_in"),
+        )
+        .select_from(Transaction)
+        .join(Account, Account.id == Transaction.to_account)
+        .group_by(Account.entity)
+        .subquery()
+    )
+
+    rows = db.execute(
+        select(
+            base.c.entity,
+            base.c.accounts,
+            func.min(base.c.risk, 100).label("risk"),
+            func.coalesce(outflow.c.volume_out, 0.0).label("volume_out"),
+            func.coalesce(inflow.c.volume_in, 0.0).label("volume_in"),
+            func.coalesce(outflow.c.txns, 0).label("txns"),
+        )
+        .select_from(base)
+        .outerjoin(outflow, outflow.c.entity == base.c.entity)
+        .outerjoin(inflow, inflow.c.entity == base.c.entity)
+        .order_by(func.min(base.c.risk, 100).desc(), base.c.entity)
+    ).all()
+
+    items = [
+        {
+            "entity": r.entity,
+            "accounts": r.accounts,
+            "risk": int(r.risk or 0),
+            "volume_in": round(float(r.volume_in or 0.0), 2),
+            "volume_out": round(float(r.volume_out or 0.0), 2),
+            "txns": int(r.txns or 0),
+        }
+        for r in rows
     ]
-    rows.sort(key=lambda r: -r["risk"])
-    return {"total": len(rows), "items": rows}
+    return {"total": len(items), "items": items}
 
 
 @app.get("/api/clusters")
@@ -858,6 +1064,16 @@ def embedded_patterns() -> dict:
 
 @app.get("/api/health")
 def health(db: Session = Depends(get_db)) -> dict:
+    if not _READY.is_set():
+        # Answered without waiting on the boot thread so probes never hang.
+        return {"status": "starting", "database": "initialising",
+                "accounts": 0, "transactions": 0, "alerts": 0,
+                "investigations": 0}
+    if _BOOT_ERROR is not None:
+        return {"status": "degraded", "database": "error",
+                "detail": str(_BOOT_ERROR),
+                "accounts": 0, "transactions": 0, "alerts": 0,
+                "investigations": 0}
     return {
         "status": "ok",
         "database": "connected",
@@ -1052,9 +1268,6 @@ def admin_health(db: Session = Depends(get_db)) -> dict:
         db_ok = True
     except Exception:
         db_ok = False
-    acct = db.execute(select(func.count(Account.id))).scalar() or 0
-    txns = db.execute(select(func.count(Transaction.id))).scalar() or 0
-    alerts_n = db.execute(select(func.count(Alert.id))).scalar() or 0
     rules = db.execute(select(DetectionRule)).scalars().all()
     rules_ok = all(r.status in ("enabled", "disabled") for r in rules)
     return {
@@ -1066,9 +1279,9 @@ def admin_health(db: Session = Depends(get_db)) -> dict:
             "storage": "operational" if db_ok else "error",
         },
         "counts": {
-            "accounts": acct,
-            "transactions": txns,
-            "alerts": alerts_n,
+            "accounts": db.execute(select(func.count(Account.id))).scalar() or 0,
+            "transactions": db.execute(select(func.count(Transaction.id))).scalar() or 0,
+            "alerts": db.execute(select(func.count(Alert.id))).scalar() or 0,
         },
         "rules": {"total": len(rules), "healthy": rules_ok},
         "version": "2.0.0",
@@ -1208,11 +1421,34 @@ def _find_frontend_dist() -> Path:
 FRONTEND_DIST = _find_frontend_dist()
 DIST_EXISTS = (FRONTEND_DIST / "index.html").is_file()
 
+# Vite emits content-hashed filenames under /assets, so they can be cached
+# aggressively; index.html must never be cached or clients pin a stale build.
+ASSET_CACHE = "public, max-age=31536000, immutable"
+HTML_CACHE = "no-cache, must-revalidate"
+
+
+class _ImmutableStatic(StaticFiles):
+    """StaticFiles that marks content-hashed assets as immutable."""
+
+    def file_response(self, *args, **kwargs):  # type: ignore[override]
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = ASSET_CACHE
+        return resp
+
+
 if DIST_EXISTS:
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+    app.mount("/assets", _ImmutableStatic(directory=FRONTEND_DIST / "assets"),
+              name="assets")
 
     @app.get("/{full_path:path}")
     async def spa(full_path: str):
         if DIST_EXISTS and (FRONTEND_DIST / full_path).is_file():
-            return FileResponse(FRONTEND_DIST / full_path)
-        return FileResponse(FRONTEND_DIST / "index.html")
+            resp = FileResponse(FRONTEND_DIST / full_path)
+            resp.headers["Cache-Control"] = (
+                ASSET_CACHE if full_path.startswith("assets/")
+                else HTML_CACHE
+            )
+            return resp
+        resp = FileResponse(FRONTEND_DIST / "index.html")
+        resp.headers["Cache-Control"] = HTML_CACHE
+        return resp

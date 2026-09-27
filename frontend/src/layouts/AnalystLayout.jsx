@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import AnalystSidebar from "../components/AnalystSidebar.jsx"
 import AnalystHeader from "../components/AnalystHeader.jsx"
+import ApiStatusBanner from "../components/ApiStatusBanner.jsx"
 
 function AnalystLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -24,6 +25,7 @@ function AnalystLayout() {
           </div>
         </main>
       </div>
+      <ApiStatusBanner />
     </div>
   )
 }

@@ -149,13 +149,12 @@ The API runs at **http://localhost:8000**. Interactive docs: http://localhost:80
 cd frontend
 npm install
 
-# Point the frontend at the backend (see Environment variables below):
-echo "VITE_API_URL=http://localhost:8000" > .env
-
 npm run dev
 ```
 
-The dev server runs at **http://localhost:5173**. Vite also proxies `/api` → `127.0.0.1:8000`, so the app works even without `.env`.
+The dev server runs at **http://localhost:5173**. Vite proxies `/api` → `127.0.0.1:8000`, so **no `.env` file is needed** for local development.
+
+> **Do not create `frontend/.env` with `VITE_API_URL=http://localhost:8000`.** Vite inlines `VITE_*` variables into the bundle at *build* time, so that file makes the production bundle call `localhost:8000` in every visitor's browser — the deployed site then fails with `ERR_CONNECTION_REFUSED` and no data loads. `src/lib/api.js` now ignores `VITE_API_URL` in production builds and uses same-origin relative paths, and `npm run build` fails if a `localhost:<port>` address reaches the built assets. For a dev server that must target a different host, put the variable in `frontend/.env.development` (loaded by `vite dev`, never by `vite build`).
 
 > **Run both servers at the same time** — the frontend has no data without the backend.
 
@@ -175,7 +174,7 @@ There is **no real authentication system**. The login screen offers two one-clic
 
 | Where | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- | --- |
-| Frontend (`frontend/.env`) | `VITE_API_URL` | No | `""` (same-origin) | Base URL of the FastAPI backend. Set to `http://localhost:8000` for local dev. In the single-URL Render deploy the frontend is served by FastAPI, so it's not needed. |
+| Frontend | `VITE_API_URL` | No | `""` (same-origin) | Only honoured by `vite dev` (via `frontend/.env.development`) to point a dev server at a different host. It is **ignored in production builds** on purpose — deployed builds always call their own origin. See the warning above. |
 | Backend | `ELEVENLABS_API_KEY` | No | unset (voice disabled) | Enables **Read Aloud / AI Investigator narration / Flow Timeline voice narration**. Without it the `/api/tts/speak` endpoint returns `503` and the UI shows a disabled/error status instead of audio. The key is read from the environment only — never committed. |
 
 **No LLM is used and no keys are required** for the core app — the AI Investigator is fully deterministic. Voice features are the one opt-in external dependency: they need an ElevenLabs API key (server env var) and use free keyless translators (Google Translate with MyMemory fallback) for non-English narration.
@@ -273,18 +272,35 @@ source backend/.venv/bin/activate
 pip install "fastapi[standard]"
 fastapi login
 
-# 2. every deploy: rebuild the frontend, copy UI into the app dir, deploy
+# 2. every deploy: `npm run build` also syncs the UI into the app dir
+#    (the postbuild step copies frontend/dist -> backend/frontend/dist)
 cd frontend && npm run build && cd ..
-rm -rf backend/frontend/dist && cp -R frontend/dist backend/frontend/dist
 fastapi deploy      # from the repo root; app was created with --directory backend
 
 # optional: set an ELEVENLABS_API_KEY so voice features work
 fastapi cloud env set ELEVENLABS_API_KEY sk_xxx --app-id <app-id>
 ```
 
+> **The build step is not optional.** FastAPI Cloud mounts only `backend/`, so a
+> build left in `frontend/dist` is never deployed — that silently ships the
+> previous UI. `npm run build` now mirrors the output into
+> `backend/frontend/dist` automatically, so you cannot forget. If you ever run
+> `vite build` directly, mirror it yourself:
+> `rm -rf backend/frontend/dist && cp -R frontend/dist backend/frontend/dist`.
+
 > Tips: keep the first `fastapi deploy` from becoming a "reuse image" no-op by **caching the image once with the UI present** (build on a fresh app first, as done here). Delete the leftover `flowsight` app in the [dashboard](https://dashboard.fastapicloud.com) if you don't use it.
 
 The app's **Application Directory is already set to `backend`** (created via `fastapi cloud apps create --directory backend`), which is where `app/main.py` and `backend/requirements.txt` live. Your app is served from a `https://<app>.fastapicloud.dev` URL; set `ELEVENLABS_API_KEY` under the app's env vars (`fastapi cloud env set ELEVENLABS_API_KEY sk_xxx`) if you want voice features.
+
+> **Cold starts and scale-to-zero.** The platform sleeps the app after
+> inactivity and the disk is ephemeral, so every wake re-seeds SQLite and re-runs
+> detection. The app therefore binds and serves the UI immediately and finishes
+> booting in a background thread, so HTML/CSS/JS paint right away; only `/api/*`
+> waits for the seed (and `/api/health` answers instantly, reporting
+> `status: starting` while it finishes). A cold boot from an empty database
+> takes about a second. To keep the instance warm, the `keepalive` GitHub
+> workflow pings `/api/health` every 10 minutes — set the repository variable
+> `APP_URL` to your deployed URL to enable it.
 
 > Notes: GitHub's push-based integration can't build the frontend yet, so use the local `fastapi deploy` flow above. On the free tier the app runs on ~0.1 vCPU / 512 MB — plenty for the ~15K-transaction demo corpus.
 

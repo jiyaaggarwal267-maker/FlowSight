@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import AdminSidebar from "../components/AdminSidebar.jsx"
 import AdminHeader from "../components/AdminHeader.jsx"
+import ApiStatusBanner from "../components/ApiStatusBanner.jsx"
 
 function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -24,6 +25,7 @@ function AdminLayout() {
           </div>
         </main>
       </div>
+      <ApiStatusBanner />
     </div>
   )
 }

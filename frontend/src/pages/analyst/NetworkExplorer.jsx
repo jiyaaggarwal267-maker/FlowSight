@@ -7,6 +7,11 @@ import { api } from "../../lib/api.js"
 
 const MAX_VISIBLE_NODES = 12
 const MAX_VISIBLE_EDGES = 32
+// The API is asked for a little more than we draw so the client-side risk
+// re-sort still has candidates to choose from, but far less than the 15k-row
+// full graph (a ~3MB response).
+const FETCH_NODES = 40
+const FETCH_EDGES = 300
 const CX = 550
 const CY = 340
 
@@ -47,7 +52,11 @@ function NetworkExplorer() {
   useEffect(() => {
     let alive = true
     setNetError(false)
-    api.network({ suspicious_only: suspiciousOnly ? "true" : "false" })
+    api.network({
+      suspicious_only: suspiciousOnly ? "true" : "false",
+      limit: String(FETCH_NODES),
+      edge_limit: String(FETCH_EDGES),
+    })
       .then((d) => { if (alive) { setNet(d); setView({ x: 0, y: 0, k: 1 }) } })
       .catch(() => { if (alive) setNetError(true) })
     return () => { alive = false }
@@ -121,6 +130,10 @@ function NetworkExplorer() {
     })
   }
   const positions = computePositions(nodes)
+  // Node id -> layout position, so edge rendering is O(1) per edge instead of
+  // a linear findIndex scan over the node list.
+  const posById = {}
+  nodes.forEach((n, i) => { posById[n.id] = positions[i] })
 
   const toggleChannel = (c) =>
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -312,10 +325,8 @@ function NetworkExplorer() {
             </defs>
 
             {edgeList.map((e, i) => {
-              const fi = nodes.findIndex((n) => n.id === e.from)
-              const ti = nodes.findIndex((n) => n.id === e.to)
-              const a = positions[fi]
-              const b = positions[ti]
+              const a = posById[e.from]
+              const b = posById[e.to]
               if (!a || !b) return null
               const highVal = (e.amount || 0) >= 500000
               const midX = (a.x + b.x) / 2 + (i % 2 === 0 ? 30 : -30)

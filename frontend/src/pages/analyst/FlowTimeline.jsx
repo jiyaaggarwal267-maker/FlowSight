@@ -4,14 +4,18 @@ import MaterialIcon from "../../components/MaterialIcon.jsx"
 import { notify, formatINR, inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from "../../lib/runtime.js"
 import { api, patternLabel } from "../../lib/api.js"
 
+// Index 0 is the hub (centred); the rest sit on a ring around it so every
+// drawn edge stays visible instead of collapsing onto a single node.
 const NODE_POS = [
-  { x: 480, y: 205 },
-  { x: 205, y: 330 },
-  { x: 755, y: 330 },
-  { x: 385, y: 445 },
-  { x: 575, y: 445 },
-  { x: 480, y: 335 },
+  { x: 480, y: 270 },
+  { x: 480, y: 90 },
+  { x: 697, y: 180 },
+  { x: 697, y: 360 },
+  { x: 480, y: 450 },
+  { x: 263, y: 360 },
+  { x: 263, y: 180 },
 ]
+const MAX_NODES = NODE_POS.length
 
 function buildDayNarration(day, idx, days) {
   const evs = Array.isArray(day.event_txns) ? day.event_txns : []
@@ -164,19 +168,73 @@ function FlowTimeline() {
     }
   }, [playing, narrationOn, frameIdx, timeline, narrationLanguage])
 
-  const sortedAccounts = [...accounts].sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0)).slice(0, 6)
+  // The layout set must be built from the accounts that actually appear in the
+  // timeline's transactions, not just the flagged dossier accounts: detectors
+  // like rapid_movement/behavioural_deviation flag a single hub while the
+  // scoped transactions touch many counterparties. Deriving nodes from the
+  // accounts alone left almost every edge with a missing endpoint, so the
+  // graph rendered empty.
+  const timelineAccounts = Array.isArray(timeline?.accounts) ? timeline.accounts : []
+  const metaById = {}
+  ;[...accounts, ...timelineAccounts].forEach((a) => {
+    if (a && a.id) metaById[a.id] = { ...(metaById[a.id] || {}), ...a }
+  })
+
+  const allTxns = days.flatMap((d) => d.event_txns || [])
+  const flowWeight = {}
+  allTxns.forEach((t) => {
+    flowWeight[t.from] = (flowWeight[t.from] || 0) + (t.amount || 0)
+    flowWeight[t.to] = (flowWeight[t.to] || 0) + (t.amount || 0)
+  })
+
+  // Rank the hub first, then its *direct* counterparties by value moved
+  // between them, then the rest by total flow. Prioritising direct neighbours
+  // matters: on a hub-and-spoke case the globally-largest accounts are often
+  // not the hub's counterparties, and picking those would draw a canvas
+  // disconnected from the flow the user is actually replaying.
+  const edgeWeight = {}
+  allTxns.forEach((t) => {
+    const pair = [t.from, t.to].sort().join("|")
+    edgeWeight[pair] = (edgeWeight[pair] || 0) + (t.amount || 0)
+  })
+  const directWeight = (a, b) => edgeWeight[[a, b].sort().join("|")] || 0
+  const hubNeighbour = new Set(
+    allTxns
+      .filter((t) => t.from === primaryAccount || t.to === primaryAccount)
+      .map((t) => (t.from === primaryAccount ? t.to : t.from)),
+  )
+
+  const candidates = Object.keys(metaById).sort((x, y) => {
+    if (x === primaryAccount) return -1
+    if (y === primaryAccount) return 1
+    const hx = hubNeighbour.has(x) ? 1 : 0
+    const hy = hubNeighbour.has(y) ? 1 : 0
+    if (hx !== hy) return hy - hx
+    const dw = directWeight(primaryAccount, y) - directWeight(primaryAccount, x)
+    if (dw !== 0) return dw
+    const w = (flowWeight[y] || 0) - (flowWeight[x] || 0)
+    if (w !== 0) return w
+    return (metaById[y].risk_score || 0) - (metaById[x].risk_score || 0)
+  })
+  const laidOut = candidates.slice(0, MAX_NODES)
   const posById = {}
-  sortedAccounts.forEach((a, i) => { posById[a.id] = NODE_POS[i % NODE_POS.length] })
+  laidOut.forEach((id, i) => { posById[id] = NODE_POS[i] })
 
   const frameTxns = days.slice(0, frameIdx + 1).flatMap((d) => d.event_txns || [])
   const activeIds = new Set(frameTxns.flatMap((t) => [t.from, t.to]))
   activeIds.add(primaryAccount)
+  // Keep the strongest flows whose endpoints are both on the canvas.
   const activeEdges = frameTxns
     .filter((t) => posById[t.from] && posById[t.to])
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))
-    .slice(0, 16)
+    .slice(0, 24)
 
-  const visibleAccounts = sortedAccounts.filter((a) => activeIds.has(a.id) || a.id === primaryAccount)
+  const visibleAccounts = laidOut
+    .filter((id) => activeIds.has(id) || id === primaryAccount)
+    .map((id) => metaById[id])
+  // Any account still moving but pushed off the canvas would otherwise vanish
+  // from the readout entirely; surface it as an unpositioned node.
+  const offCanvas = [...activeIds].filter((id) => !posById[id] && metaById[id])
 
   const play = () => { setFrame(0); setPlaying(true) }
   const seekTo = (i) => { setFrame(i); setPlaying(false) }
@@ -366,7 +424,7 @@ function FlowTimeline() {
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-outline"></span> Forming Flow</span>
               </div>
               <div className="flex items-center gap-space-xs">
-                <span>{activeEdges.length} flows · {visibleAccounts.length}/{accounts.length} accounts formed</span>
+                <span>{activeEdges.length} flows · {visibleAccounts.length}/{laidOut.length} accounts formed{offCanvas.length > 0 ? ` · ${offCanvas.length} off-canvas` : ""}</span>
               </div>
             </div>
           </div>

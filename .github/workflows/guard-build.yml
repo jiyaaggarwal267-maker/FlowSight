@@ -1,0 +1,58 @@
+name: Guard deployment build
+
+# The deployed site once shipped a bundle that called localhost:8000, which made
+# every visitor's browser fail with ERR_CONNECTION_REFUSED. `npm run build` now
+# refuses to sync such a bundle, and these tests lock the contract in, so a
+# regression fails here instead of in a browser.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Backend tests
+        working-directory: backend
+        run: python -m pytest -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (fails if a localhost API URL reaches the bundle)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify deployment contract
+        working-directory: backend
+        run: python -m pytest test_deployment_contract.py -q
+
+      - name: Confirm the built UI is mirrored into backend/frontend/dist
+        run: |
+          test -f backend/frontend/dist/index.html || {
+            echo "::error::backend/frontend/dist/index.html missing; FastAPI Cloud would serve no UI."
+            exit 1
+          }
+          echo "backend/frontend/dist is present"

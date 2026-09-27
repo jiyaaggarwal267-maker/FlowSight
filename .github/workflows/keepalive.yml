@@ -1,9 +1,11 @@
-name: Keep Render service awake
+name: Keep FLOWSIGHT deployment awake
 
 on:
   schedule:
-    # Every 10 minutes keeps the Render free service under its ~15 min idle
-    # spin-down so it never falls asleep.
+    # FastAPI Cloud scales to zero after inactivity, so the first visitor of
+    # each idle period pays a cold start and the ephemeral SQLite database is
+    # re-seeded, discarding anything written since the last sleep. Pinging
+    # /api/health keeps the instance warm and preserves data across idle gaps.
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
@@ -13,10 +15,10 @@ jobs:
     steps:
       - name: Ping health endpoint
         env:
-          APP_URL: ${{ vars.APP_URL }}
+          # Override with a repository variable named APP_URL if the app is ever
+          # deployed somewhere else. The literal default means keep-alive works
+          # with no repository configuration at all.
+          APP_URL: ${{ vars.APP_URL || 'https://flowsight-app.fastapicloud.dev' }}
         run: |
-          if [ -z "$APP_URL" ]; then
-            echo "Set a repository variable 'APP_URL' (e.g. https://flowsight.onrender.com) to enable keep-alive pings." >&2
-            exit 0
-          fi
-          curl -fsS -o /dev/null --max-time 60 -w "pong: HTTP %{http_code} in %{time_total}s\n" "$APP_URL/api/health"
+          echo "pinging $APP_URL"
+          curl -fsS --max-time 60 -w "pong: HTTP %{http_code} in %{time_total}s\n" -o /dev/null "$APP_URL/api/health"

@@ -5,14 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Webfonts are loaded non-blocking: they are preloaded (so the fetch starts
+      at high priority) but only promoted to stylesheets once loaded, so first
+      paint is not held behind two round-trips to Google. The stacks in
+      index.css fall back to system-ui/monospace, so text renders immediately.
+    -->
     <link
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
     <link
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-      rel="stylesheet"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      />
+    </noscript>
+    <style>
+      /* Icon ligatures are raw words ("account_balance"); keep them hidden
+         until the icon font is actually usable. */
+      .material-symbols-outlined { visibility: hidden; }
+      html.fonts-ready .material-symbols-outlined { visibility: visible; }
+    </style>
+    <script>
+      (function () {
+        var root = document.documentElement;
+        function ready() { root.classList.add("fonts-ready"); }
+        if (!document.fonts || !document.fonts.load) return ready();
+        // Never leave icons invisible if the font is blocked or slow.
+        var timer = setTimeout(ready, 2000);
+        document.fonts
+          .load('24px "Material Symbols Outlined"')
+          .then(function () { clearTimeout(timer); requestAnimationFrame(ready); })
+          .catch(function () { clearTimeout(timer); ready(); });
+      })();
+    </script>
     <title>FLOWSIGHT — Financial Forensic Intelligence &amp; Graph Analytics</title>
   </head>
   <body>
