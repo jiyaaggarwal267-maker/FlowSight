@@ -105,7 +105,7 @@ function AnalystOverview() {
       </section>
 
       {/* Metric KPI Cards (4-Grid Bento) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md" data-tour="overview-kpis">
         <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group">
           <div className="flex items-start justify-between">
             <span className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Transactions Monitored</span>
@@ -236,7 +236,7 @@ function AnalystOverview() {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 min-h-[460px]">
           {/* Graph Canvas: 8 cols */}
-          <div className="xl:col-span-8 relative bg-[#fafbfc] overflow-hidden flex flex-col justify-between p-space-md" id="graph-viewport">
+          <div className="xl:col-span-8 relative bg-[#fafbfc] overflow-hidden flex flex-col justify-between p-space-md" data-tour="overview-graph" id="graph-viewport">
             <div className="absolute inset-0 opacity-[0.45] pointer-events-none" style={{ backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-space-sm pointer-events-none">

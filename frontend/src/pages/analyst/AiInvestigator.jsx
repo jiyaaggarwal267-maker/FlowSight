@@ -6,8 +6,8 @@ import { inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from ".
 
 const PRESETS = [
   { icon: "psychology", text: "Why was this network flagged?" },
-  { icon: "route", text: "Show shortest path between AC-20491 and AC-19281" },
-  { icon: "account_tree", text: "Trace all outflows from AC-84729 in last 72 hours" },
+  { icon: "route", text: "Show shortest path between AC-10316 and AC-10348" },
+  { icon: "account_tree", text: "Trace all outflows from AC-10275 in last 72 hours" },
   { icon: "radar", text: "Detect smurfing patterns under ₹5L threshold" },
   { icon: "fingerprint", text: "Compare device fingerprint overlaps across mule nodes" },
 ]
@@ -186,7 +186,7 @@ function AiInvestigator() {
       </section>
 
       {/* Query Formulation Center */}
-      <section className="w-full mb-space-xl">
+      <section className="w-full mb-space-xl" data-tour="ai-query">
         <div className="p-space-lg rounded-xl bg-surface-container-lowest shadow-md">
           <form className="flex flex-col gap-space-md" onSubmit={submitAnalysis}>
             <div className="relative flex items-center">

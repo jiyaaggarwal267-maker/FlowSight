@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import engine as detect_engine
+from . import ml_detection
 from .models import (
     Account,
     Alert,
@@ -136,20 +137,63 @@ def _seed_users(db: Session) -> None:
         )
 
 
-def _compute_account_risks(db: Session, findings: list[dict]) -> dict[str, int]:
+def _ml_score_accounts(db: Session) -> dict[str, dict]:
+    """Train the Isolation Forest on live transaction data and score accounts.
+
+    Unsupervised and retrained from the current rows every time detection
+    refreshes, so the signal always reflects the data actually in the database.
+    """
+    rows = db.execute(select(Transaction)).scalars().all()
+    txn_rows = [
+        {
+            "from_account": t.from_account,
+            "to_account": t.to_account,
+            "amount": t.amount,
+            "timestamp": t.timestamp,
+            "status": t.status,
+        }
+        for t in rows
+    ]
+    account_ids = list(db.execute(select(Account.id)).scalars().all())
+
+    vectors = ml_detection.build_features(txn_rows, account_ids)
+    ml_model = ml_detection.train(vectors)
+    if ml_model is None:
+        return {}
+    ml_detection.save_model(ml_model)
+    return ml_detection.score_accounts(ml_model, vectors)
+
+
+def _compute_account_risks(
+    db: Session,
+    findings: list[dict],
+    ml_scores: dict[str, dict] | None = None,
+) -> dict[str, int]:
+    """Sum rule-based risk, then add the ML anomaly points on top.
+
+    The ML layer is purely additive: it can only increase a score by up to
+    `ml_detection.ML_RISK_WEIGHT` (+15) and never alters detector output.
+    """
     risk: dict[str, int] = {}
     for f in findings:
         for a in f["accounts"]:
             risk[a] = risk.get(a, 0) + int(f["risk"])
+    for acct_id, ml in (ml_scores or {}).items():
+        if ml["risk_points"]:
+            risk[acct_id] = risk.get(acct_id, 0) + int(ml["risk_points"])
     return {k: min(v, 100) for k, v in risk.items()}
 
 
-def _seed_alerts_and_investigations(db: Session, findings: list[dict]) -> None:
+def _seed_alerts_and_investigations(
+    db: Session,
+    findings: list[dict],
+    ml_scores: dict[str, dict] | None = None,
+) -> None:
     existing = db.execute(select(Alert.id)).scalars().all()
     if existing:
         return
 
-    account_risks = _compute_account_risks(db, findings)
+    account_risks = _compute_account_risks(db, findings, ml_scores)
     ordered = sorted(
         findings,
         key=lambda f: -max(account_risks.get(a, 0) for a in f["accounts"]),
@@ -177,7 +221,7 @@ def _seed_alerts_and_investigations(db: Session, findings: list[dict]) -> None:
             alert_id=alert.id,
             status="open",
             risk_score=alert_risk,
-            summary_json=_build_summary(f, accts),
+            summary_json=_build_summary(f, accts, ml_scores),
             assigned_to="A. Sharma" if n <= 3 else "",
         )
         db.add(inv)
@@ -194,15 +238,57 @@ def _alert_amount(f: dict, db: Session) -> float:
     return round(sum(rows), 2)
 
 
-def _build_summary(f: dict, accts: list[str]) -> dict:
+def _build_summary(
+    f: dict,
+    accts: list[str],
+    ml_scores: dict[str, dict] | None = None,
+) -> dict:
+    primary = accts[0] if accts else ""
     return {
         "pattern": f["pattern"],
-        "primary_account": accts[0] if accts else "",
+        "primary_account": primary,
         "accounts": accts,
         "transactions": list(f.get("transactions", [])),
         "evidence": f.get("evidence", ""),
         "description": _pattern_description(f["pattern"]),
+        "ml_signal": _ml_signal_for(accts, ml_scores, primary),
     }
+
+
+def _ml_signal_for(
+    accts: list[str],
+    ml_scores: dict[str, dict] | None,
+    primary: str,
+) -> dict | None:
+    """Summarise the ML anomaly signal for a dossier.
+
+    Reports the primary account's score, and the strongest co-involved account
+    when the dossier spans several, so an analyst sees how the group as a whole
+    compares to the trained population.
+    """
+    if not ml_scores:
+        return None
+    ordered = sorted(accts, key=lambda a: -(ml_scores.get(a, {}).get("anomaly_score", 0.0)))
+    top = ordered[0] if ordered else primary
+    if not top or top not in ml_scores:
+        return None
+    entry = ml_scores[top]
+    signal = {
+        "account": top,
+        "anomaly_score": entry["anomaly_score"],
+        "risk_points": entry["risk_points"],
+        "max_risk_points": ml_detection.ML_RISK_WEIGHT,
+        "features": entry.get("features", {}),
+        "method": "Isolation Forest (unsupervised)",
+    }
+    others = [
+        {"account": a, "anomaly_score": ml_scores[a]["anomaly_score"]}
+        for a in ordered[1:]
+        if a in ml_scores
+    ]
+    if others:
+        signal["also_flagged"] = others
+    return signal
 
 
 def _pattern_description(pattern: str) -> str:
@@ -227,8 +313,9 @@ def seed_if_needed(db: Session) -> bool:
         if not db.execute(select(Alert.id).limit(1)).first():
             rules = _rules_dict(db)
             findings, _clusters = detect_engine.run_with_rules(rules)
-            _seed_alerts_and_investigations(db, findings)
-            risks = _compute_account_risks(db, findings)
+            ml_scores = _ml_score_accounts(db)
+            _seed_alerts_and_investigations(db, findings, ml_scores)
+            risks = _compute_account_risks(db, findings, ml_scores)
             for acct_id, score in risks.items():
                 acct = db.get(Account, acct_id)
                 if acct:
@@ -244,9 +331,10 @@ def seed_if_needed(db: Session) -> bool:
 
     rules = _rules_dict(db)
     findings, _clusters = detect_engine.run_with_rules(rules)
-    _seed_alerts_and_investigations(db, findings)
+    ml_scores = _ml_score_accounts(db)
+    _seed_alerts_and_investigations(db, findings, ml_scores)
 
-    risks = _compute_account_risks(db, findings)
+    risks = _compute_account_risks(db, findings, ml_scores)
     for acct_id, score in risks.items():
         acct = db.get(Account, acct_id)
         if acct:
@@ -288,7 +376,8 @@ def refresh_detection(db: Session) -> tuple[list[dict], list[dict]]:
     """
     rules = _rules_dict(db)
     findings, clusters = detect_engine.run_with_rules(rules)
-    account_risks = _compute_account_risks(db, findings)
+    ml_scores = _ml_score_accounts(db)
+    account_risks = _compute_account_risks(db, findings, ml_scores)
 
     existing_alerts = {
         a.id: a for a in db.execute(select(Alert)).scalars().all()
@@ -350,7 +439,7 @@ def refresh_detection(db: Session) -> tuple[list[dict], list[dict]]:
                                 if risk >= 60 else "")
             db.add(inv)
         inv.risk_score = risk
-        inv.summary_json = _build_summary(f, list(f["accounts"]))
+        inv.summary_json = _build_summary(f, list(f["accounts"]), ml_scores)
 
     # Remove stale alerts + their dossiers.
     stale = [a for i, a in existing_alerts.items() if i not in active_ids]
@@ -364,7 +453,7 @@ def refresh_detection(db: Session) -> tuple[list[dict], list[dict]]:
         for a in stale:
             db.delete(a)
 
-    risks = _compute_account_risks(db, findings)
+    risks = _compute_account_risks(db, findings, ml_scores)
     for acct_id, score in risks.items():
         acct = db.get(Account, acct_id)
         if acct:

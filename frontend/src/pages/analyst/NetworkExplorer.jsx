@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
-import Skeleton, { useDemoLoad } from "../../components/Skeleton.jsx"
-import { bus, notify } from "../../lib/runtime.js"
+import Skeleton from "../../components/Skeleton.jsx"
+import { bus } from "../../lib/runtime.js"
 import { api } from "../../lib/api.js"
 
 const MAX_VISIBLE_NODES = 12
@@ -33,7 +33,6 @@ function NetworkExplorer() {
   const [channels, setChannels] = useState([])
   const minFlow = 100000
   const canvasRef = useRef(null)
-  const loading = useDemoLoad(650)
 
   useEffect(() => {
     let alive = true
@@ -70,7 +69,9 @@ function NetworkExplorer() {
   const openDrawer = (id) => {
     setSelected(id)
     setDrawerOpen(true)
-    bus.emit("case-context", { entity: id, case: "INV-001" })
+    // Only the entity is known here — this page is corpus-scoped, not
+    // case-scoped, so no investigation id is claimed.
+    bus.emit("case-context", { entity: id })
   }
 
   const zoomBy = (factor) => {
@@ -172,8 +173,10 @@ function NetworkExplorer() {
           <div className="flex items-center gap-space-md">
             <div className="flex flex-col">
               <div className="flex items-center gap-space-xs">
-                <h1 className="font-headline-lg text-headline-lg text-on-surface">Network Explorer</h1>
-                <span className="px-space-xs py-0.5 rounded bg-error text-on-error font-label-caps text-label-caps tracking-wider">INVESTIGATION INV-001</span>
+                <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Network Explorer</h1>
+                <span className="px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider">
+                  {nodes.length} NODES · {edgesData.length} EDGES
+                </span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Topological forensic graph of suspected mule fan-out and multi-hop layering topology.</p>
             </div>
@@ -187,31 +190,17 @@ function NetworkExplorer() {
                 if (match) { setSelected(match.id); setDrawerOpen(true) }
               }} />
             </div>
-            <button className="h-9 px-space-md bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-sm text-label-sm rounded-lg flex items-center gap-space-xs shadow-sm transition-colors cursor-pointer" type="button" onClick={() => notify({ title: "Advanced rules", body: "Graph rule builder is managed in Admin → Detection Rules.", tone: "primary" })}>
-              <MaterialIcon name="tune" className="text-[18px] text-secondary" />
-              <span>Advanced Rules</span>
-            </button>
-            <button className="h-9 px-space-md bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm rounded-lg flex items-center gap-space-xs shadow-sm transition-colors cursor-pointer" type="button" onClick={() => notify({ title: "View saved", body: `Viewport at ${Math.round(view.k * 100)}% stored for INV-001.`, tone: "primary" })}>
-              <MaterialIcon name="save" className="text-[18px]" />
-              <span>Save View</span>
+            <button className="h-9 px-space-md bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-sm text-label-sm rounded-lg flex items-center gap-space-xs shadow-sm transition-colors cursor-pointer" type="button" onClick={fitScreen}>
+              <MaterialIcon name="center_focus_strong" className="text-[18px] text-secondary" />
+              <span>Fit to Screen</span>
             </button>
           </div>
         </div>
         <div className="flex items-center gap-space-xs overflow-x-auto pb-1 select-none">
-          <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap">
-            <MaterialIcon name="calendar_today" className="text-[16px] text-primary" />
-            <span className="text-on-surface-variant font-medium">Window:</span>
-            <span className="font-semibold">Oct 1 - Oct 31, 2024</span>
-          </div>
           <button type="button" onClick={() => { setHighRiskOnly((v) => !v); fitScreen() }} className={`flex items-center gap-1.5 px-space-sm py-1 rounded font-label-sm text-label-sm whitespace-nowrap transition-colors cursor-pointer ${highRiskOnly ? "bg-error text-on-error" : "bg-error-container text-on-error-container hover:bg-error/70"}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-error"></span>
             <span className="font-semibold">Risk: {highRiskOnly ? "High (≥80)" : "All"}</span>
           </button>
-          <div className="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-lowest shadow-sm text-on-surface font-label-sm text-label-sm whitespace-nowrap">
-            <MaterialIcon name="hub" className="text-[16px] text-tertiary" />
-            <span className="text-on-surface-variant">Typology:</span>
-            <span className="font-semibold">Circular Flow, Fan-Out, Mule Net</span>
-          </div>
           <button type="button" onClick={() => { setMinFlowOnly((v) => !v); fitScreen() }} className={`flex items-center gap-1.5 px-space-sm py-1 rounded font-label-sm text-label-sm whitespace-nowrap transition-colors cursor-pointer ${minFlowOnly ? "bg-primary text-on-primary" : "bg-surface-container-lowest shadow-sm text-on-surface hover:bg-surface-container"}`}>
             <MaterialIcon name="currency_rupee" className="text-[16px] text-secondary" />
             <span className="text-on-surface-variant">Min Flow:</span>
@@ -230,7 +219,7 @@ function NetworkExplorer() {
         </div>
       </div>
 
-      <div className="relative w-full h-[calc(100vh-20rem)] min-h-[440px] md:h-[calc(100vh-16rem)] xl:h-[calc(100vh-14rem)] xl:min-h-[580px] rounded-xl bg-surface-container-lowest overflow-hidden shadow-sm flex">
+      <div className="relative w-full h-[calc(100vh-20rem)] min-h-[440px] md:h-[calc(100vh-16rem)] xl:h-[calc(100vh-14rem)] xl:min-h-[580px] rounded-xl bg-surface-container-lowest overflow-hidden shadow-sm flex" data-tour="nx-graph">
         <div className="absolute top-space-md left-space-md z-20 flex flex-wrap items-center gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md p-space-xs rounded-xl shadow-md">
           <div className="flex items-center bg-surface-container-low rounded-lg p-0.5">
             <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-lowest text-on-surface transition-colors cursor-pointer" title="Zoom In" type="button" onClick={() => zoomBy(1.15)}>
@@ -282,11 +271,11 @@ function NetworkExplorer() {
           onWheel={onWheel}
           ref={canvasRef}
         >
-          {loading || !net ? (
+          {!net && !netError ? (
             <div className="absolute inset-0 p-space-base flex flex-col gap-space-md">
               <div className="flex items-center gap-2">
                 <span className="px-space-sm py-0.5 rounded bg-error-container text-error font-label-caps text-label-caps font-bold uppercase tracking-wider">Graph Loading</span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Compiling multi-hop topology for INV-001…</span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">Compiling multi-hop topology…</span>
               </div>
               <Skeleton className="h-56 w-3/4" />
               <div className="flex gap-space-base">
@@ -424,14 +413,6 @@ function NetworkExplorer() {
               <Link className="w-full h-9 rounded bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm flex items-center justify-center gap-space-xs transition-colors" to={`/analyst/entities/${selected}`}>
                 <MaterialIcon name="account_box" className="text-[16px]" />
                 <span>View Entity Profile ({selected})</span>
-              </Link>
-              <Link className="w-full h-9 rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm flex items-center justify-center gap-space-xs transition-colors" to="/analyst/investigations/INV-001">
-                <MaterialIcon name="folder_open" className="text-[16px]" />
-                <span>Open Investigation</span>
-              </Link>
-              <Link className="w-full h-9 rounded bg-surface-container-lowest hover:bg-surface-container-low text-secondary font-label-sm text-label-sm flex items-center justify-center gap-space-xs transition-colors" to="/analyst/flow-timeline">
-                <MaterialIcon name="timeline" className="text-[16px]" />
-                <span>Trace Flow Timeline</span>
               </Link>
             </div>
           </aside>

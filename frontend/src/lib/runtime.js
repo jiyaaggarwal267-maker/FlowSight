@@ -101,7 +101,7 @@ const NOTIFICATIONS = [
   {
     id: "notif-live-1",
     title: "High-risk alert escalated",
-    body: "AC-20491 crossed 3X daily velocity. Assigned to INV-042.",
+    body: "AC-10316 crossed 3X daily velocity. Assigned to INV-001.",
     tone: "error",
     time: "just now",
   },

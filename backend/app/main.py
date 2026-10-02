@@ -32,6 +32,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 import detection as det
+from . import red_team
 from .database import get_db
 from .models import (
     Account,
@@ -706,15 +707,33 @@ def _risk_breakdown(inv: Investigation, db: Session) -> list[dict]:
     for a in db.execute(select(Alert)).scalars().all():
         if a.id == inv.alert_id:
             contributions[a.pattern_type] = contributions.get(a.pattern_type, 0) + a.risk_score
-    total = sum(contributions.values()) or inv.risk_score or 1
-    return [
+    # The ML signal is additive on top of the detector contribution, so it is
+    # listed as its own factor rather than folded into the pattern total.
+    ml = summary.get("ml_signal")
+    ml_points = int(ml.get("risk_points") or 0) if isinstance(ml, dict) else 0
+    total = sum(contributions.values()) + ml_points
+    total = total or inv.risk_score or 1
+    rows = [
         {
             "pattern": p,
             "risk": r,
             "weight": round(r / total * 100, 1),
+            "source": "rule",
         }
         for p, r in sorted(contributions.items(), key=lambda x: -x[1])
-    ] or [{"pattern": "composite", "risk": inv.risk_score, "weight": 100.0}]
+    ]
+    if ml_points:
+        rows.append({
+            "pattern": "ml_anomaly",
+            "risk": ml_points,
+            "weight": round(ml_points / total * 100, 1),
+            "source": "ml",
+            "anomaly_score": ml.get("anomaly_score"),
+        })
+    if not rows:
+        return [{"pattern": "composite", "risk": inv.risk_score, "weight": 100.0,
+                 "source": "rule"}]
+    return rows
 
 
 def _dossier_dict(inv: Investigation, db: Session) -> dict:
@@ -749,6 +768,7 @@ def _dossier_dict(inv: Investigation, db: Session) -> dict:
             "primary_account": summary.get("primary_account", ""),
             "pattern_types": [a.pattern_type for a in alerts_here],
             "findings": [_alert_dict(a) for a in alerts_here],
+            "ml_signal": summary.get("ml_signal"),
         },
         "evidence": [
             {"txn_id": t["txn_id"], "type": "transaction",
@@ -1085,6 +1105,38 @@ def health(db: Session = Depends(get_db)) -> dict:
 
 
 # ── 7. admin ──────────────────────────────────────────────────────────
+
+
+@app.get("/api/admin/red-team/config")
+def red_team_config(db: Session = Depends(get_db)) -> dict:
+    """Live detection thresholds + control bounds, for the Red Team controls."""
+    rows = db.execute(select(DetectionRule).order_by(DetectionRule.id)).scalars().all()
+    return {
+        "thresholds": red_team.live_thresholds([_rule_dict(r) for r in rows]),
+        "bounds": red_team.CONTROL_BOUNDS,
+        "presets": red_team.PRESETS,
+        "base_amount": red_team.BASE_AMOUNT,
+    }
+
+
+@app.post("/api/admin/red-team/simulate")
+def red_team_simulate(payload: dict, db: Session = Depends(get_db)) -> dict:
+    """Generate one synthetic network and test it with the real engine.
+
+    Deliberately takes no `db` writes: the sandbox never touches the database.
+    """
+    rows = db.execute(select(DetectionRule).order_by(DetectionRule.id)).scalars().all()
+    return red_team.simulate(payload or {}, [_rule_dict(r) for r in rows])
+
+
+@app.get("/api/admin/red-team/state")
+def red_team_state() -> dict:
+    return red_team.state()
+
+
+@app.post("/api/admin/red-team/clear")
+def red_team_clear() -> dict:
+    return red_team.clear()
 
 
 @app.get("/api/admin/rules")

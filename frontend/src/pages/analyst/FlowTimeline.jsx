@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Link, useLocation, useParams } from "react-router-dom"
 import MaterialIcon from "../../components/MaterialIcon.jsx"
-import { notify, formatINR, inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from "../../lib/runtime.js"
+import { notify, bus, formatINR, inrToWords, TTS_LANGUAGES, getTtsLanguage, persistTtsLanguage } from "../../lib/runtime.js"
 import { api, patternLabel } from "../../lib/api.js"
 
 // Index 0 is the hub (centred); the rest sit on a ring around it so every
@@ -46,6 +46,7 @@ function FlowTimeline() {
   const [inv, setInv] = useState(null)
   const [timeline, setTimeline] = useState(null)
   const [frame, setFrame] = useState(-1)
+  const [loadError, setLoadError] = useState("")
   const [playing, setPlaying] = useState(false)
   const [narrationOn, setNarrationOn] = useState(false)
   const [narrationLanguage, setNarrationLanguage] = useState(getTtsLanguage)
@@ -58,15 +59,23 @@ function FlowTimeline() {
 
   useEffect(() => {
     let alive = true
+    // Keep the sidebar "Active Case" panel in sync with the case on screen.
+    bus.emit("case-context", { case: initialId })
     async function load() {
       try {
         const d = await api.investigation(initialId)
         if (alive) setInv(d)
-      } catch {}
+      } catch {
+        // A missing case is a real, reportable state — never render an empty
+        // graph as if the account simply had no activity.
+        if (alive) setLoadError(`Investigation ${initialId} could not be loaded.`)
+      }
       try {
         const t = await api.investigationTimeline(initialId)
         if (alive) { setTimeline(t); setFrame((t?.days?.length || 1) - 1) }
-      } catch {}
+      } catch {
+        if (alive) setLoadError(`Timeline data for ${initialId} could not be loaded.`)
+      }
     }
     load()
     return () => { alive = false }
@@ -334,6 +343,19 @@ function FlowTimeline() {
             {/* Technical Dot-Matrix Background */}
             <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: "radial-gradient(#747686 0.75px, transparent 0.75px)", backgroundSize: "16px 16px" }}></div>
 
+            {loadError && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-space-sm p-space-lg text-center">
+                <MaterialIcon name="error" className="text-[32px] text-error" />
+                <p className="font-headline-sm text-headline-sm text-on-surface">{loadError}</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+                  An empty graph is not evidence of inactivity. Check the case id, then reload.
+                </p>
+                <Link to="/analyst/alerts" className="mt-1 px-space-md py-space-sm rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors">
+                  Back to Alerts
+                </Link>
+              </div>
+            )}
+
             {/* Canvas Floating Top Toolbar */}
             <div className="relative z-20 flex items-center justify-between p-space-md pointer-events-none">
               <div className="flex items-center gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md px-space-sm py-1 rounded shadow-sm pointer-events-auto">
@@ -430,7 +452,7 @@ function FlowTimeline() {
           </div>
 
           {/* Formation Window Playback & Scrubber Controller Bar */}
-          <div className="w-full bg-surface-container-lowest rounded shadow-sm p-space-base flex flex-col gap-space-md">
+          <div className="w-full bg-surface-container-lowest rounded shadow-sm p-space-base flex flex-col gap-space-md" data-tour="ft-scrubber">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-space-sm">
                 <MaterialIcon name="history" className="text-[20px] text-primary" />

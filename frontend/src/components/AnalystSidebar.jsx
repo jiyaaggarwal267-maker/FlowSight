@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { to: "/analyst/network-explorer", end: true, label: "Network Explorer", icon: "hub" },
   { to: "/analyst/alerts", end: true, label: "Alerts", icon: "warning", badge: "12" },
   { to: "/analyst/investigations/INV-001", end: false, label: "Investigations", icon: "policy" },
-  { to: "/analyst/flow-timeline", end: true, label: "Flow Timeline", icon: "timeline" },
+  { useActiveCase: true, to: "/analyst/flow-timeline", end: true, label: "Flow Timeline", icon: "timeline" },
   { to: "/analyst/entities/AC-10316", end: false, label: "Entities", icon: "corporate_fare" },
   { to: "/analyst/ai-investigator", end: true, label: "AI Investigator", icon: "auto_awesome", badge: "BETA" },
   { to: "/analyst/reports", end: true, label: "Reports", icon: "description" },
@@ -51,10 +51,14 @@ function SideNavItem({ item }) {
 }
 
 function AnalystSidebar({ open = false }) {
-  const [context, setContext] = useState({ case: "INV-042", entity: "AC-20491" })
+  // Seeded with real IDs from the current dataset; NetworkExplorer replaces
+  // these at runtime via the "case-context" bus event.
+  const [context, setContext] = useState({ case: "INV-001", entity: "AC-10316" })
 
   useEffect(() => {
-    return bus.on("case-context", setContext)
+    // Merge rather than replace: pages that are not case-scoped (Network
+    // Explorer) emit only the entity, and must not wipe the active case.
+    return bus.on("case-context", (patch) => setContext((c) => ({ ...c, ...patch })))
   }, [])
 
   return (
@@ -76,14 +80,17 @@ function AnalystSidebar({ open = false }) {
         <div className="px-space-sm pt-space-sm">
           <nav className="flex flex-col gap-space-2xs">
             {NAV_ITEMS.map((item) => (
-              <SideNavItem key={item.to} item={item} />
+              <SideNavItem
+                key={item.to}
+                item={item.useActiveCase ? { ...item, to: `${item.to}/${context.case}` } : item}
+              />
             ))}
           </nav>
         </div>
         <div className="px-space-sm pt-space-sm">
           <Link
             className="flex items-center justify-between px-space-sm py-2 rounded-lg bg-secondary-container/60 hover:bg-secondary-container transition-colors ring-1 ring-inset ring-secondary-fixed-dim"
-            to="/analyst/flow-timeline"
+            to={`/analyst/flow-timeline/${context.case}`}
           >
             <div className="flex flex-col min-w-0">
               <span className="font-label-caps text-label-caps text-on-secondary-fixed-variant uppercase tracking-wider">Active Case</span>

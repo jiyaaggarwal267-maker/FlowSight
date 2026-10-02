@@ -80,7 +80,7 @@ function AlertsTriage() {
     const t = setInterval(() => {
       notify({
         title: "New high-velocity pattern detected",
-        body: "6-account fan-out from AC-66401 flagged · suggested case INV-043.",
+        body: "16-account fan-out from AC-10246 flagged · suggested case INV-009.",
         tone: "error",
       })
     }, 18000)
@@ -101,7 +101,7 @@ function AlertsTriage() {
             <span className="text-outline text-body-sm">•</span>
             <span className="font-label-caps text-label-caps text-on-surface-variant">Real-Time Graph Telemetry</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Alerts</h1>
+          <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Alerts</h1>
           <p className="font-body-md text-body-md text-on-surface-variant">Prioritized suspicious activity requiring analyst attention.</p>
         </div>
         <div className="flex flex-wrap items-center gap-space-sm">

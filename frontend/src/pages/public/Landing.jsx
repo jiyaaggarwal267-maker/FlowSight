@@ -7,11 +7,11 @@ import LandingGraph from "./LandingGraph.jsx"
 import { bus, openPalette, formatINR } from "../../lib/runtime.js"
 
 const FEED_INITIAL = [
-  { id: 1, tone: "error", text: "INV-042 · Circular flow escalated — routed to FIU L2 queue" },
-  { id: 2, tone: "primary", text: "AC-20491 breached 3.1X baseline velocity in 90 minutes" },
-  { id: 3, tone: "amber", text: "New mule account AC-66401 · naming-pattern match conf. 0.86" },
+  { id: 1, tone: "error", text: "INV-001 · Circular flow escalated — routed to FIU L2 queue" },
+  { id: 2, tone: "primary", text: "AC-10316 breached 3.1X baseline velocity in 90 minutes" },
+  { id: 3, tone: "amber", text: "New mule account AC-10275 · naming-pattern match conf. 0.86" },
   { id: 4, tone: "secondary", text: "Rule RF-14 dry-run complete · 14 hits · 3 confirmed mules" },
-  { id: 5, tone: "primary", text: "Crypto off-ramp AC-99032 checkpoint cleared at 11:30 IST" },
+  { id: 5, tone: "primary", text: "Crypto off-ramp AC-10387 checkpoint cleared at 11:30 IST" },
 ]
 
 const FEED_TONE = {
@@ -204,13 +204,13 @@ function Landing() {
                 </div>
                 <div className="bg-slate-900/90 border border-slate-800 p-2 rounded text-xs text-slate-200 my-1 overflow-x-auto shadow-inner">
                   <div className="text-blue-400 font-medium whitespace-nowrap">
-                    └─ <span className="text-white font-bold bg-blue-950/80 px-1 py-0.5 rounded border border-blue-800">AC-9214 (HDFC)</span>
+                    └─ <span className="text-white font-bold bg-blue-950/80 px-1 py-0.5 rounded border border-blue-800">AC-10316 (ICICI)</span>
                     <span className="text-amber-400 font-semibold">──[₹4,20,000]──&gt;</span>
-                    <span className="text-white font-bold bg-slate-800 px-1 py-0.5 rounded">AC-4102 (ICICI)</span>
+                    <span className="text-white font-bold bg-slate-800 px-1 py-0.5 rounded">AC-10275 (HDFC)</span>
                     <span className="text-amber-400 font-semibold">──[₹8,10,450]──&gt;</span>
-                    <span className="text-white font-bold bg-slate-800 px-1 py-0.5 rounded">AC-8821 (Axis)</span>
+                    <span className="text-white font-bold bg-slate-800 px-1 py-0.5 rounded">AC-10348 (ICICI)</span>
                     <span className="text-red-400 font-semibold">──[₹6,40,000]──&gt;</span>
-                    <span className="text-red-400 font-bold underline decoration-red-500">AC-9214</span>
+                    <span className="text-red-400 font-bold underline decoration-red-500">AC-10316</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
@@ -225,7 +225,7 @@ function Landing() {
                   </div>
                 </div>
                 <div className="text-slate-400 text-xs pt-1">
-                  <span className="text-blue-400">&gt;</span> Case <strong className="text-white">INV-042</strong> flagged and automatically routed to <span className="text-blue-400 underline">FIU L2 queue</span>
+                  <span className="text-blue-400">&gt;</span> Case <strong className="text-white">INV-001</strong> flagged and automatically routed to <span className="text-blue-400 underline">FIU L2 queue</span>
                 </div>
                 <div className="text-slate-400 text-xs flex items-center">
                   <span className="text-blue-400">&gt;</span>&nbsp;Awaiting analyst dispatch... <span className="animate-pulse text-blue-400 font-bold text-sm ml-0.5">_</span>
@@ -262,11 +262,11 @@ function Landing() {
                     <circle cx="390" cy="110" fill="#64748b" r="4"></circle>
                     <circle className="animate-ping" cx="120" cy="75" fill="#ef4444" opacity="0.2" r="14"></circle>
                     <circle cx="120" cy="75" fill="#dc2626" r="9" stroke="#fca5a5" strokeWidth="2"></circle>
-                    <text fill="#f87171" fontFamily="monospace" fontSize="12" fontWeight="bold" textAnchor="middle" x="120" y="98">AC-9214 (Hub)</text>
+                    <text fill="#f87171" fontFamily="monospace" fontSize="12" fontWeight="bold" textAnchor="middle" x="120" y="98">AC-10316 (Hub)</text>
                     <circle cx="340" cy="50" fill="#2563eb" r="7" stroke="#93c5fd" strokeWidth="1.5"></circle>
-                    <text fill="#cbd5e1" fontFamily="monospace" fontSize="12" textAnchor="middle" x="340" y="38">AC-4102</text>
+                    <text fill="#cbd5e1" fontFamily="monospace" fontSize="12" textAnchor="middle" x="340" y="38">AC-10275</text>
                     <circle cx="230" cy="125" fill="#2563eb" r="7" stroke="#93c5fd" strokeWidth="1.5"></circle>
-                    <text fill="#cbd5e1" fontFamily="monospace" fontSize="12" textAnchor="middle" x="230" y="143">AC-8821</text>
+                    <text fill="#cbd5e1" fontFamily="monospace" fontSize="12" textAnchor="middle" x="230" y="143">AC-10348</text>
                   </svg>
                   <div className="absolute bottom-2 right-2 bg-slate-900/90 px-2 py-0.5 rounded border border-slate-700 text-xs font-mono text-slate-400">
                     Loop: 3 Entity Hops
@@ -484,7 +484,7 @@ function Landing() {
               <div className="flex items-center gap-1.5 text-blue-400 font-semibold border-b border-slate-800 pb-2">
                 <MaterialIcon name="psychology" className="text-sm" />
                 <span>Investigation Note:</span>
-                <span className="text-slate-400 font-normal">Entity cluster centered on <code className="text-white bg-slate-800 px-1 py-0.5 rounded border border-slate-700">AC-9214</code> shows repetitive structuring across 47 hops.</span>
+                <span className="text-slate-400 font-normal">Entity cluster centered on <code className="text-white bg-slate-800 px-1 py-0.5 rounded border border-slate-700">AC-10316</code> shows repetitive structuring across 47 hops.</span>
               </div>
               <div className="bg-slate-950 p-2.5 rounded border border-slate-800 text-slate-400 flex items-start justify-between gap-2">
                 <div>

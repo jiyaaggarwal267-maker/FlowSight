@@ -7,3 +7,4 @@ flowsight.db
 flowsight.db-shm
 flowsight.db-wal
 dist/
+backend/data/isolation_forest.joblib

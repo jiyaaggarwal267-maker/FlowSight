@@ -105,7 +105,7 @@ function AdminOverview() {
             <span className="text-outline text-body-sm">/</span>
             <span className="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Telemetry Core</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Admin Overview</h1>
+          <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Admin Overview</h1>
           <p className="font-body-md text-body-md text-on-surface-variant">Monitor FLOWSIGHT operations, analysts and detection systems.</p>
         </div>
         <div className="flex items-center gap-space-sm self-start md:self-auto">

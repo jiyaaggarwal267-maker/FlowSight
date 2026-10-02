@@ -4,13 +4,13 @@ import MaterialIcon from "./MaterialIcon.jsx"
 import { bus, getTheme, setTheme } from "../lib/runtime.js"
 
 const COMMANDS = [
-  { label: "Analyst Overview", hint: "analyst", icon: "dashboard", path: "/app/overview" },
-  { label: "Network Explorer", hint: "graph · INV-042", icon: "hub", path: "/app/network-explorer" },
-  { label: "Alerts Triage", hint: "live queue", icon: "notifications_none", path: "/app/alerts" },
-  { label: "Flow Timeline", hint: "investigation · INV-042", icon: "timeline", path: "/app/investigations/inv-042" },
-  { label: "Entity Profile", hint: "AC-20491", icon: "account_balance", path: "/app/entities/ac-20491" },
-  { label: "AI Investigator", hint: "copilot", icon: "auto_awesome", path: "/app/ai-investigator" },
-  { label: "Investigation Reports", hint: "filings", icon: "description", path: "/app/reports" },
+  { label: "Analyst Overview", hint: "analyst", icon: "dashboard", path: "/analyst/overview" },
+  { label: "Network Explorer", hint: "graph", icon: "hub", path: "/analyst/network-explorer" },
+  { label: "Alerts Triage", hint: "live queue", icon: "notifications_none", path: "/analyst/alerts" },
+  { label: "Flow Timeline", hint: "formation replay", icon: "timeline", path: "/analyst/flow-timeline" },
+  { label: "Entity Profile", hint: "AC-10316", icon: "account_balance", path: "/analyst/entities/AC-10316" },
+  { label: "AI Investigator", hint: "copilot", icon: "auto_awesome", path: "/analyst/ai-investigator" },
+  { label: "Investigation Reports", hint: "filings", icon: "description", path: "/analyst/reports" },
   { label: "Admin Overview", hint: "admin", icon: "admin_panel_settings", path: "/admin/overview" },
   { label: "User Management", hint: "admin", icon: "group", path: "/admin/users" },
   { label: "Rule Engine", hint: "admin", icon: "rule", path: "/admin/rules" },
@@ -122,7 +122,7 @@ export default function CommandPalette() {
               }
               if (e.key === "Enter" && results[index]) trigger(results[index])
             }}
-            placeholder="Search pages, accounts, cases…"
+            placeholder="Search pages and actions…"
             ref={inputRef}
             type="text"
             value={query}
@@ -132,7 +132,7 @@ export default function CommandPalette() {
         <div className="max-h-[46vh] overflow-y-auto p-space-sm border-t border-surface-container-high">
           {results.length === 0 && (
             <div className="px-space-md py-space-lg text-center font-body-sm text-body-sm text-on-surface-variant">
-              No matches for “{query}”. Try an account ID like AC-20491.
+              No matches for “{query}”.
             </div>
           )}
           {results.map((item, i) => (

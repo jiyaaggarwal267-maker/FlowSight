@@ -134,6 +134,34 @@ function InvestigationView() {
   const txns = inv?.transactions || []
   const risk = inv?.risk_score || 0
   const severity = risk >= 60 ? "critical" : risk >= 40 ? "high" : risk >= 25 ? "medium" : "low"
+  const ml = inv?.summary?.ml_signal || null
+  const riskBar = (score) => (score >= 60 ? "text-error" : score >= 40 ? "text-amber-600" : "text-primary")
+  const riskFill = (score) => (score >= 60 ? "bg-error" : score >= 40 ? "bg-amber-600" : "bg-primary")
+  const patternLabel = (p) =>
+    ({
+      circular_flow: "Circular Flow",
+      fan_out: "Fan-Out (Structuring)",
+      fan_in: "Fan-In (Smurfing)",
+      behavioral_deviation: "Behavioral Deviation",
+      rapid_movement: "Rapid Movement",
+      composite: "Composite Risk",
+    })[p] || p
+  // Real per-factor contributions from the API, each shown on its own cap so the
+  // rule weights and the capped ML signal stay visually comparable.
+  const riskBreakdown = (inv?.risk_breakdown || []).length
+    ? inv.risk_breakdown.map((f) => {
+        const isMl = f.source === "ml" || f.pattern === "ml_anomaly"
+        return {
+          key: f.pattern,
+          label: isMl ? "ML Anomaly Signal" : patternLabel(f.pattern),
+          // The ML row is scored on its own 0-100 anomaly scale, not on the
+          // 0-100 composite risk scale, so it is not directly comparable.
+          score: isMl ? f.anomaly_score ?? 0 : f.risk,
+          cap: isMl ? 100 : 100,
+          isMl,
+        }
+      })
+    : [{ key: "composite", label: "Pattern Severity", score: Math.min(risk, 100), cap: 100, isMl: false }]
   // Local triangular closed-loop layout for the archetype diagram
   // (rendering only — uses the page's existing accts/txns data as-is).
   const graphAccts = accts.slice(0, 3)
@@ -285,7 +313,7 @@ function InvestigationView() {
               <MaterialIcon name="hub" className="text-[18px] text-primary" />
               <span className="font-label-sm text-label-sm font-medium">Explore in Network Graph</span>
             </Link>
-            <Link className="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-high transition-all active:scale-[0.98]" to="/analyst/flow-timeline">
+            <Link className="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-high transition-all active:scale-[0.98]" to={`/analyst/flow-timeline/${id}`}>
               <MaterialIcon name="timeline" className="text-[18px] text-secondary" />
               <span className="font-label-sm text-label-sm font-medium">View Flow Timeline</span>
             </Link>
@@ -447,7 +475,7 @@ function InvestigationView() {
           </div>
 
           {/* Explainable Intelligence Evidence Panel */}
-          <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col">
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col" data-tour="inv-evidence">
             <div className="flex items-center justify-between pb-space-md">
               <div className="flex items-center gap-space-sm">
                 <div className="w-8 h-8 rounded-lg bg-primary-fixed text-primary flex items-center justify-center">
@@ -549,7 +577,7 @@ function InvestigationView() {
 
         <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-space-lg min-w-0">
           {/* Risk Factor Breakdown */}
-          <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col">
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col" data-tour="inv-risk">
             <div className="flex items-center justify-between pb-space-md">
               <div className="flex items-center gap-space-xs">
                 <MaterialIcon name="bar_chart" className="text-[20px] text-error" />
@@ -558,19 +586,45 @@ function InvestigationView() {
               <span className="font-label-caps text-label-caps text-outline uppercase font-mono">{severity.toUpperCase()}</span>
             </div>
             <div className="flex flex-col gap-space-md">
-              {[
-                { label: "Pattern Severity", score: Math.min(risk, 100), color: risk >= 60 ? "text-error" : risk >= 40 ? "text-amber-600" : "text-primary" },
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col gap-space-2xs">
-                  <div className="flex justify-between items-center text-body-sm font-body-sm">
-                    <span className="text-on-surface font-medium">{item.label}</span>
-                    <span className={`font-numeric-md text-numeric-md font-bold ${item.color}`}>{item.score} / 100</span>
+              {riskBreakdown.map((item) => (
+                <div key={item.key} className="flex flex-col gap-space-2xs">
+                  <div className="flex justify-between items-center text-body-sm font-body-sm gap-space-xs">
+                    <span className="text-on-surface font-medium flex items-center gap-space-xs">
+                      {item.label}
+                      {item.isMl && (
+                        <span className="font-label-caps text-label-caps bg-primary-container text-on-primary px-1.5 py-0.5 rounded font-mono">
+                          UNSUPERVISED
+                        </span>
+                      )}
+                    </span>
+                    <span className={`font-numeric-md text-numeric-md font-bold ${riskBar(item.score)}`}>
+                      {item.score} / {item.cap}
+                    </span>
                   </div>
                   <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${risk >= 60 ? "bg-error" : risk >= 40 ? "bg-amber-600" : "bg-primary"}`} style={{ width: `${item.score}%` }}></div>
+                    <div
+                      className={`h-full rounded-full ${item.isMl ? "bg-primary" : riskFill(item.score)}`}
+                      style={{ width: `${Math.min(100, (item.score / item.cap) * 100)}%` }}
+                    ></div>
                   </div>
                 </div>
               ))}
+
+              {ml && (
+                <div className="mt-space-2xs rounded-lg bg-surface-container p-space-md flex flex-col gap-space-xs">
+                  <p className="text-body-sm font-body-sm text-on-surface font-medium">
+                    ML Anomaly Signal — {ml.account} scored {ml.anomaly_score}/100, contributing +{ml.risk_points} of a possible {ml.max_risk_points} points.
+                  </p>
+                  <p className="text-body-sm text-body-sm text-on-surface-variant">
+                    An Isolation Forest trained on this population&rsquo;s own transaction behaviour, with no labels and no hand-written thresholds. A high score means the account&rsquo;s activity pattern is unlike the others, not that it is confirmed fraud. It adds to &mdash; and never replaces &mdash; the rule-based detectors above.
+                  </p>
+                  {ml.features && (
+                    <p className="text-body-sm text-body-sm text-on-surface-variant font-mono">
+                      {ml.features.txn_count} txns · avg ₹{Math.round(ml.features.avg_amount).toLocaleString("en-IN")} · {ml.features.unique_counterparties} counterparties · {Math.round(ml.features.avg_hours_between_txns)}h avg gap · out/in {Number(ml.features.out_in_ratio).toFixed(1)}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

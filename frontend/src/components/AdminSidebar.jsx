@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: "/admin/overview", end: true, label: "Admin Overview", icon: "dashboard" },
   { to: "/admin/users", end: true, label: "Users & Roles", icon: "manage_accounts" },
   { to: "/admin/rules", end: true, label: "Detection Rules", icon: "rule" },
+  { to: "/admin/red-team", end: true, label: "Red Team", icon: "security" },
   { to: "/admin/audit-logs", end: true, label: "Audit Logs", icon: "receipt_long" },
   { to: "/admin/health", end: true, label: "System Health", icon: "health_and_safety" },
 ]

@@ -154,6 +154,11 @@ export const api = {
   updateRulesBulk: (payload) =>
     request("/api/admin/rules", { method: "PATCH", body: JSON.stringify(payload) }),
   auditLogs: (params) => request(`/api/admin/audit-logs${qs(params)}`),
+  redTeamConfig: () => request("/api/admin/red-team/config"),
+  redTeamSimulate: (payload) =>
+    request("/api/admin/red-team/simulate", { method: "POST", body: JSON.stringify(payload) }),
+  redTeamState: () => request("/api/admin/red-team/state"),
+  redTeamClear: () => request("/api/admin/red-team/clear", { method: "POST" }),
   speak: async (text, language = "en") => {
     const res = await retryingFetch("/api/tts/speak", {
       method: "POST",

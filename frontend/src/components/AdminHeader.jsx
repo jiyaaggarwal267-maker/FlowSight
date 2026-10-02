@@ -3,6 +3,7 @@ import Emblem from "./Emblem.jsx"
 import MaterialIcon from "./MaterialIcon.jsx"
 import ThemeToggle from "./ThemeToggle.jsx"
 import BellMenu from "./BellMenu.jsx"
+import { openContextModal, startTour } from "../lib/tour.js"
 import { openPalette } from "../lib/runtime.js"
 
 function AdminHeader({ onMenu = () => {} }) {
@@ -19,8 +20,8 @@ function AdminHeader({ onMenu = () => {} }) {
         </button>
         <div className="flex items-center gap-space-sm min-w-0">
           <Emblem />
-          <span className="hidden md:inline font-headline-sm text-headline-sm tracking-wider uppercase text-on-surface font-semibold whitespace-nowrap sm:text-[12px] xl:text-headline-sm">
-            FLOWSIGHT ADMIN CONSOLE
+          <span className="hidden md:inline font-headline-sm text-headline-sm text-on-surface font-semibold whitespace-nowrap sm:text-[12px] xl:text-headline-sm">
+            FlowSight Admin Console
           </span>
         </div>
         <div className="hidden lg:block px-space-sm py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-caps text-label-caps font-semibold uppercase tracking-wider whitespace-nowrap">
@@ -41,7 +42,25 @@ function AdminHeader({ onMenu = () => {} }) {
             ⌘K
           </span>
         </button>
+        <button
+          className="flex items-center gap-1.5 h-9 px-2 sm:px-space-md rounded-lg bg-surface-container-lowest shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-on-surface hover:bg-surface-container transition-colors cursor-pointer whitespace-nowrap"
+          onClick={() => startTour(0)}
+          title="Walk through the FLOWSIGHT workflow"
+          type="button"
+        >
+          <MaterialIcon name="play_circle" className="text-[20px] text-primary" />
+          <span className="hidden sm:inline font-label-sm text-label-sm font-semibold">Guided Tour</span>
+        </button>
         <div className="flex items-center gap-1 sm:gap-space-xs">
+          <button
+            aria-label="About this tool"
+            className="relative w-9 h-8 rounded-lg flex items-center justify-center text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+            onClick={openContextModal}
+            title="About this tool — who FLOWSIGHT is for"
+            type="button"
+          >
+            <MaterialIcon name="info" className="text-[20px]" />
+          </button>
           <BellMenu />
           <ThemeToggle />
         </div>

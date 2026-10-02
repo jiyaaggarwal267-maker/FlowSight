@@ -532,7 +532,7 @@ function AdminRules() {
                 Real-Time Inference Node
               </span>
             </div>
-            <h1 className="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Detection Rules</h1>
+            <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Detection Rules</h1>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
               Configure suspicious activity detection parameters, topological graph heuristics, and velocity guardrails.
             </p>
@@ -585,7 +585,7 @@ function AdminRules() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-lg mb-space-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-lg mb-space-xl" data-tour="rules-grid">
           {visible.map((r) => (
             <RuleCard key={r.id} rule={r} preset={presetFor(r)} onSave={onSave} />
           ))}

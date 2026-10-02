@@ -5,7 +5,7 @@ import MaterialIcon from "../../components/MaterialIcon.jsx"
 const MINI_NODES = [
   { dot: "bg-emerald-400", title: "SRC-301", sub: "₹4,20,000 · UPI", static: "left-[80px] top-[95px]" },
   { dot: "bg-emerald-400", title: "SRC-884", sub: "₹8,10,450 · IMPS", static: "left-[80px] top-[235px]" },
-  { dot: "bg-blue-400", title: "AC-1099 (Kotak)", sub: "₹3,50,000 · Fan-Out", static: "left-[490px] top-[275px]" },
+  { dot: "bg-blue-400", title: "AC-10387 (Axis)", sub: "₹3,50,000 · Fan-Out", static: "left-[490px] top-[275px]" },
   { dot: "bg-red-500", title: "SYNTHETIC CORP", sub: "Circular Loop Sink", static: "left-[670px] top-[195px]", red: true },
   { icon: "currency_exchange", title: "CRYPTO ON-RAMP", sub: "USDT Gateway Liquidity", static: "right-[30px] top-[115px]" },
   { icon: "apartment", title: "OFFSHORE SINK", sub: "Tax Haven Layer 4", static: "right-[30px] top-[290px]", red: true },
@@ -133,7 +133,7 @@ function LandingGraph({ tall = false }) {
           <div className="relative px-3.5 py-2.5 bg-red-950 border-2 border-red-500 rounded-xl shadow-2xl text-left ring-2 ring-red-400/40">
             <div className="flex items-center justify-between gap-2">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-              <span className="font-mono text-xs font-bold text-red-400">AC-9214 (HDFC)</span>
+              <span className="font-mono text-xs font-bold text-red-400">AC-10316 (ICICI)</span>
               <span className="bg-red-600 text-white font-mono text-xs font-bold px-1.5 py-0.5 rounded">94/100</span>
             </div>
             <p className="font-mono text-xs text-red-400 font-semibold mt-1">₹18,70,450 • Inflow Hub</p>
@@ -144,7 +144,7 @@ function LandingGraph({ tall = false }) {
           <div className="flex items-start justify-between pb-2 border-b border-slate-800">
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs font-bold text-red-400">SUSPECT NODE: AC-9214</span>
+                <span className="font-mono text-xs font-bold text-red-400">SUSPECT NODE: AC-10316</span>
               </div>
               <p className="text-xs text-slate-400 font-mono">HDFC Bank · Fort Branch</p>
             </div>
@@ -204,7 +204,7 @@ function LandingGraph({ tall = false }) {
           <div className="flex items-start justify-between pb-2 border-b border-slate-800">
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs font-bold text-red-400">SUSPECT NODE: AC-9214</span>
+                <span className="font-mono text-xs font-bold text-red-400">SUSPECT NODE: AC-10316</span>
               </div>
               <p className="text-xs text-slate-400 font-mono">HDFC Bank · Fort Branch</p>
             </div>

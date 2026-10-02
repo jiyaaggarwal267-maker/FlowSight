@@ -4,11 +4,11 @@ import PublicLayout from "./layouts/PublicLayout.jsx"
 import AnalystLayout from "./layouts/AnalystLayout.jsx"
 import AdminLayout from "./layouts/AdminLayout.jsx"
 import CommandPalette from "./components/CommandPalette.jsx"
+import OnboardingLayer from "./components/OnboardingLayer.jsx"
 import Skeleton from "./components/Skeleton.jsx"
 import { initTheme } from "./lib/runtime.js"
 
 const Landing = lazy(() => import("./pages/public/Landing.jsx"))
-const NetworkGraphPublic = lazy(() => import("./pages/public/NetworkGraphPublic.jsx"))
 const Login = lazy(() => import("./pages/public/Login.jsx"))
 const AnalystOverview = lazy(() => import("./pages/analyst/AnalystOverview.jsx"))
 const NetworkExplorer = lazy(() => import("./pages/analyst/NetworkExplorer.jsx"))
@@ -21,6 +21,7 @@ const InvestigationReports = lazy(() => import("./pages/analyst/InvestigationRep
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview.jsx"))
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers.jsx"))
 const AdminRules = lazy(() => import("./pages/admin/AdminRules.jsx"))
+const AdminRedTeam = lazy(() => import("./pages/admin/AdminRedTeam.jsx"))
 const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs.jsx"))
 const AdminHealth = lazy(() => import("./pages/admin/AdminHealth.jsx"))
 const AnalystSettings = lazy(() => import("./pages/analyst/Settings.jsx"))
@@ -52,7 +53,6 @@ function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Landing />} />
-            <Route path="/network-graph" element={<NetworkGraphPublic />} />
             <Route path="/login" element={<Login />} />
           </Route>
           <Route path="/analyst" element={<AnalystLayout />}>
@@ -61,7 +61,7 @@ function App() {
             <Route path="network-explorer" element={<NetworkExplorer />} />
             <Route path="alerts" element={<AlertsTriage />} />
             <Route path="investigations/:id" element={<InvestigationView />} />
-            <Route path="flow-timeline" element={<FlowTimeline />} />
+            <Route path="flow-timeline/:id?" element={<FlowTimeline />} />
             <Route path="entities/:id" element={<EntityProfile />} />
             <Route path="ai-investigator" element={<AiInvestigator />} />
             <Route path="reports" element={<InvestigationReports />} />
@@ -72,6 +72,7 @@ function App() {
             <Route path="overview" element={<AdminOverview />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="rules" element={<AdminRules />} />
+            <Route path="red-team" element={<AdminRedTeam />} />
             <Route path="audit-logs" element={<AdminAuditLogs />} />
             <Route path="health" element={<AdminHealth />} />
             <Route path="settings" element={<AdminSettings />} />
@@ -80,6 +81,7 @@ function App() {
         </Routes>
         <CommandPalette />
       </Suspense>
+      <OnboardingLayer />
     </BrowserRouter>
   )
 }
