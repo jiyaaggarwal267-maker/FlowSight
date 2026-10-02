@@ -44,7 +44,6 @@ from .models import (
     User,
 )
 from .seed import audit, refresh_detection, seed_if_needed
-from .tts import router as tts_router
 
 DATA_DIR = BACKEND_ROOT / "data"
 
@@ -208,8 +207,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(tts_router)
 
 
 def _add_column_if_missing(conn, insp, table: str, *columns) -> None:
@@ -1494,6 +1491,13 @@ if DIST_EXISTS:
 
     @app.get("/{full_path:path}")
     async def spa(full_path: str):
+        # An unmatched /api/* path must 404 as JSON, never fall through to the
+        # SPA shell. Built assets are cached immutably for a year, so a client
+        # on an older bundle can call an endpoint this build no longer serves;
+        # answering 200 + index.html makes res.json() throw and surfaces as a
+        # confusing parse error instead of an honest "no such endpoint".
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail=f"Unknown API path: /{full_path}")
         if DIST_EXISTS and (FRONTEND_DIST / full_path).is_file():
             resp = FileResponse(FRONTEND_DIST / full_path)
             resp.headers["Cache-Control"] = (

@@ -159,24 +159,6 @@ export const api = {
     request("/api/admin/red-team/simulate", { method: "POST", body: JSON.stringify(payload) }),
   redTeamState: () => request("/api/admin/red-team/state"),
   redTeamClear: () => request("/api/admin/red-team/clear", { method: "POST" }),
-  speak: async (text, language = "en") => {
-    const res = await retryingFetch("/api/tts/speak", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, language }),
-    })
-    if (!res.ok) {
-      let detail = res.statusText
-      try {
-        const body = await res.json()
-        detail = body.detail || detail
-      } catch {
-        /* ignore non-JSON error body */
-      }
-      throw new Error(`${res.status} ${detail}`)
-    }
-    return res.blob()
-  },
 }
 
 /**
